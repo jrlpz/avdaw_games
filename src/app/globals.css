@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+:root {
+    --color-logo1: #3e3467; 
+    --color-logo2: #c1c2d9;  
+    --color-logo3: #f7f7f0;  
+    --color-fondo:#1d1d39;
+  }
+  
+  

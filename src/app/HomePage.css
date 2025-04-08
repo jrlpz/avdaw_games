@@ -1,0 +1,60 @@
+.home-page {
+    font-family: sans-serif;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .minijuegos-container {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los elementos se envuelvan a la siguiente fila */
+    justify-content: center; /* Centra los elementos horizontalmente */
+    gap: 20px; /* Espacio entre los elementos */
+    margin-top: 20px;
+  
+  }
+  
+  .minijuego-item {
+    width: 300px; /* Ancho fijo para cada elemento */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    overflow: hidden; /* Evita que la imagen sobresalga */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out; /* Animación suave al pasar el mouse */
+  }
+  
+  .minijuego-item:hover {
+    transform: scale(1.05); /* Aumenta el tamaño al pasar el mouse */
+  }
+  
+  .minijuego-item a {
+    display: block;
+    text-decoration: none;
+    color: #333;
+    padding: 10px;
+  }
+  
+  .minijuego-item img {
+    width: 100%; /* La imagen ocupa todo el ancho del contenedor */
+    height: auto; /* Mantiene la proporción de la imagen */
+    display: block; /* Elimina el espacio debajo de la imagen */
+  }
+  
+  .minijuego-item h3 {
+    margin-top: 10px;
+    font-size: 1.2em;
+    text-align: center;
+  }
+  
+  .minijuego-item p {
+    font-size: 0.9em;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  footer {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    font-size: 0.8em;
+    color: #777;
+  }
