@@ -109,7 +109,7 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-gray-800 px-6 py-3 flex items-center justify-between flex-wrap">
+    <header className="bg-[var(--color-header)] px-6 py-3 flex items-center justify-between flex-wrap">
       <div className="flex items-center gap-4"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -119,7 +119,7 @@ const Header: React.FC = () => {
           onClick={handleHomeClick}
           aria-label="Inicio"
         >
-          <GrGamepad className="text-yellow-400 text-2xl cursor-pointer" />
+          <GrGamepad className="text-[var(--color-mando)] text-2xl cursor-pointer" />
         </button>
 
         {/* Mobile menu toggle */}

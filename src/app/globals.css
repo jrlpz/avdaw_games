@@ -5,13 +5,19 @@
     --color-logo2: #c1c2d9;  
     --color-logo3: #f7f7f0;  
     --color-fondo:#1d1d39;
-
+    --color-mando:#fcc800 ;
+    --color-header: #1e2939;
     --color-delete: #c95c44;
-  }
+
+
+    /*Modo oscuro*/
+    --dt-background: #1d1d39;
+
+ }
   
 
   .enter-button-movil {
-    background-color: var(--color-logo1) ;
+    background-color: var(--color-header) ;
     color: var(--color-logo3) ;
   }
   
