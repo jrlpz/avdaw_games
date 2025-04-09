@@ -5,6 +5,17 @@
     --color-logo2: #c1c2d9;  
     --color-logo3: #f7f7f0;  
     --color-fondo:#1d1d39;
+
+    --color-delete: #c95c44;
   }
   
+
+  .enter-button-movil {
+    background-color: var(--color-logo1) ;
+    color: var(--color-logo3) ;
+  }
   
+  .delete-button-movil {
+    background-color: var(--color-delete) !important; /* Rojo para el Delete */
+    color: white !important; /* Para que el texto sea legible */
+  }

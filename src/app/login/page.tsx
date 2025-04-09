@@ -15,7 +15,7 @@ export default function Login() {
     }
   }, [state, router]);
 
-  const handleRegisterClick = () => {
+  const handleRegisterClick = ()=> {
     router.
     push('/registro');
   };

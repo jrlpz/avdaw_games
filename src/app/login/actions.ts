@@ -8,7 +8,6 @@ interface LoginState {
   success?: boolean;
   redirectTo?: string;
 }
-
 export async function login(prevState: LoginState, formData: FormData): Promise<LoginState> {
   const supabase = await createClient();
   const email = formData.get('email') as string;

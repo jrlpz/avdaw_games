@@ -1,6 +1,7 @@
 import React from 'react';
 import './HomePage.css'; // Importa el archivo CSS
 import Image from 'next/image';
+
 export default function HomePage() {
   const minijuegos = [
     {

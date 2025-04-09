@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useWindowSize } from 'react-use';
 import Confetti from 'react-confetti';
 import { GiAbstract050 } from "react-icons/gi";
-
 const WORDS = ['ARROZ', 'TARTA', 'QUESO', 'MANGO', 'PASTA', 'FRESA', 'LECHE'];
 type LetterState = 'correct' | 'present' | 'absent' | 'empty';
 
@@ -12,7 +11,7 @@ interface Tile {
     state: LetterState;
 }
 
-const WordleGame = () => {
+const WordleGame = ()=> {
     const [winner, setWinner] = useState(false);
     const [targetWord, setTargetWord] = useState('');
     const [currentGuess, setCurrentGuess] = useState('');
@@ -158,7 +157,7 @@ const WordleGame = () => {
                             recycle={false}
                         />
                     )}
-                    {rows.map((row, rowIndex) => (
+                    {rows.map((row, rowIndex)=> (
                         <div key={rowIndex} className="flex justify-center space-x-1">
                             {row.map(key => {
                                 const state = key.length === 1 ? keyState[key] : undefined;
@@ -166,22 +165,26 @@ const WordleGame = () => {
                                 const isLarge = key.length > 1;
 
                    return (
-    <button
-        key={key}
-        className={`${colorClass} 
-            ${isLarge
-                ? isMobile ? 'px-3 py-3 text-base' : 'px-5 py-3 text-lg'
-                : isMobile ? 'px-3 py-3 text-sm' : 'px-4 py-2 text-lg'
-            } rounded font-bold hover:brightness-110 active:scale-95 transition-all 
-            ${isMobile ? 'text-lg' : 'text-xl'}
-            ${key === 'Enter' && isMobile
-                ? 'px-5 py-4 text-2xl  bg-green-500 hover:bg-green-600 text-white'  // Verde
-                : ''
-            }`}
-        onClick={() => handleVirtualKeyPress(key)}
-    >
-        {isMobile && key === 'Enter' ? '↵' : key}
-    </button>
+                    <button
+                    key={key}
+                    className={`${colorClass}
+                        ${isLarge
+                            ? isMobile ? 'px-3 py-3 text-base' : 'px-5 py-3 text-lg'
+                            : isMobile ? 'px-3 py-3 text-sm' : 'px-4 py-2 text-lg'
+                        } rounded font-bold hover:brightness-110 active:scale-95 transition-all
+                        ${isMobile ? 'text-lg' : 'text-xl'}
+                        ${key === 'Enter' && isMobile
+                            ? 'px-5 py-4 text-2xl  enter-button-movil'
+                            : ''
+                        }
+                        ${key === '⌫' && isMobile // Agrega esta condición
+                            ? 'px-4 py-2 text-lg delete-button-movil' // Aplica la clase
+                            : ''
+                        }`}
+                    onClick={() => handleVirtualKeyPress(key)}
+                >
+                    {isMobile && key === 'Enter' ? '↵' : key}
+                </button>
 );
                             })}
                         </div>
