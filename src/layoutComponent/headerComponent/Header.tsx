@@ -4,199 +4,215 @@ import { FaBars, FaSearch, FaUserCircle } from "react-icons/fa";
 import { GrGamepad } from "react-icons/gr";
 import { useRouter } from 'next/navigation';
 import { useSyncExternalStore } from 'react';
-import Link from 'next/link';  // Import Link from next/link
+import Link from 'next/link';
+import { MdOutlineDarkMode } from "react-icons/md";
 
 interface UserData {
-  email: string;
-  username?: string;
+    email: string;
+    username?: string;
+}
+
+interface HeaderProps {
+    tema: string;
+    setTema: React.Dispatch<React.SetStateAction<string>>;
 }
 
 // Function to subscribe to localStorage changes
 function subscribe(callback: () => void) {
-  if (typeof window !== 'undefined') {
-    window.addEventListener('storage', callback);
-    return () => window.removeEventListener('storage', callback);
-  }
-  return () => { };
+    if (typeof window !== 'undefined') {
+        window.addEventListener('storage', callback);
+        return () => window.removeEventListener('storage', callback);
+    }
+    return () => { };
 }
 
 // Function to get the current value from localStorage
 function getSnapshot(): string | null {
-  if (typeof window !== 'undefined') {
-    const userData = localStorage.getItem('userData');
-    return userData ? JSON.parse(userData).email : null;
-  }
-  return null;
+    if (typeof window !== 'undefined') {
+        const userData = localStorage.getItem('userData');
+        return userData ? JSON.parse(userData).email : null;
+    }
+    return null;
 }
 
 // Function for server-side rendering
 function getServerSnapshot(): string | null {
-  return null;
+    return null;
 }
 
-const Header: React.FC = () => {
-  const router = useRouter();
-  const [user, setUser] = useState<UserData | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);  // State for menu open/close
-  const menuRef = useRef<HTMLDivElement>(null); // Reference to the menu container
+const Header: React.FC<HeaderProps> = ({ tema, setTema }) => {
+    const router = useRouter();
+    const [user, setUser] = useState<UserData | null>(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
-  // useSyncExternalStore with server snapshot support
-  const storedEmail = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+    // useSyncExternalStore with server snapshot support
+    const storedEmail = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    const loadUserData = () => {
-      if (typeof window !== 'undefined') {
-        const userData = localStorage.getItem('userData');
-        if (userData) {
-          try {
-            const parsedData = JSON.parse(userData);
-            setUser({
-              email: parsedData.email,
-              username: parsedData.username || parsedData.email.split('@')[0]
-            });
-          } catch (error) {
-            console.error("Error parsing user data:", error);
-            localStorage.removeItem('userData');
-          }
-        }
-      }
-    };
+    useEffect(() => {
+        const loadUserData = () => {
+            if (typeof window !== 'undefined') {
+                const userData = localStorage.getItem('userData');
+                if (userData) {
+                    try {
+                        const parsedData = JSON.parse(userData);
+                        setUser({
+                            email: parsedData.email,
+                            username: parsedData.username || parsedData.email.split('@')[0]
+                        });
+                    } catch (error) {
+                        console.error("Error parsing user data:", error);
+                        localStorage.removeItem('userData');
+                    }
+                }
+            }
+        };
 
-    loadUserData();
-
-    // Listen for storage events (changes from other tabs)
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'userData') {
         loadUserData();
-      }
+
+        // Listen for storage events (changes from other tabs)
+        const handleStorage = (e: StorageEvent) => {
+            if (e.key === 'userData') {
+                loadUserData();
+            }
+        };
+
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
+    }, [storedEmail]);
+
+    const handleHomeClick = () => {
+        router.push('/');
     };
 
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, [storedEmail]);
+    const handleLoginClick = () => {
+        router.push('/login');
+    };
 
-  const handleHomeClick = () => {
-    router.push('/');
-  };
+    const handleLogout = async () => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('userData');
+        }
 
-  const handleLoginClick = () => {
-    router.push('/login');
-  };
+        try {
+            // Call logout API route if using Supabase auth
+            await fetch('/api/auth/logout', { method: 'POST' });
+        } catch (error) {
+            console.error("Logout error:", error);
+        }
 
-  const handleLogout = async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('userData');
-    }
+        setUser(null);
+        router.push('/login');
+        router.refresh(); // Ensure page updates
+    };
 
-    try {
-      // Call logout API route if using Supabase auth
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    const handleMouseEnter = () => {
+        setIsMenuOpen(true);
+    };
 
-    setUser(null);
-    router.push('/login');
-    router.refresh(); // Ensure page updates
-  };
+    const handleMouseLeave = () => {
+        setIsMenuOpen(false);
+    };
 
-  const handleMouseEnter = () => {
-    setIsMenuOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    setIsMenuOpen(false);
-  };
-
-  return (
-    <header className="bg-[var(--color-header)] px-6 py-3 flex items-center justify-between flex-wrap">
-      <div className="flex items-center gap-4"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        ref={menuRef}
-      >
-        <button
-          onClick={handleHomeClick}
-          aria-label="Inicio"
-        >
-          <GrGamepad className="text-[var(--color-mando)] text-2xl cursor-pointer" />
-        </button>
-
-        {/* Mobile menu toggle */}
-        <FaBars
-          className="text-white text-xl cursor-pointer lg:hidden"
-          aria-label="Menú"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        />
-
-        {/* Dropdown menu for desktop */}
-        {isMenuOpen && (
-          <div className="absolute left-0 top-11 bg-gray-700 rounded-md shadow-xl z-10 lg:hidden">
-            <ul className="py-2 text-sm text-gray-200">
-              <li>
-                <Link href="/juegos/tictactoe" className="block px-4 py-2 hover:bg-gray-600 hover:text-white">
-                  Tic Tac Toe
-                </Link>
-              </li>
-              <li>
-                <Link href="/juegos/words" className="block px-4 py-2 hover:bg-gray-600 hover:text-white">
-                  Words
-                </Link>
-              </li>
-            </ul>
-          </div>
-        )}
-
-        {/* Menu for larger screens */}
-        <div className="hidden lg:flex space-x-4">
-          <Link href="/juegos/tictactoe" className="text-white hover:text-gray-400">Tic Tac Toe</Link>
-          <Link href="/juegos/words" className="text-white hover:text-gray-400">Words</Link>
-        </div>
-      </div>
-
-      {/* Search bar */}
-      <div className="relative hidden lg:block">
-        <input
-          type="text"
-          placeholder="¿A qué jugamos hoy?"
-          className="bg-gray-700 text-gray-400 text-sm px-4 py-2 rounded-full w-64 focus:outline-none"
-          aria-label="Buscar juegos"
-        />
-        <FaSearch
-          className="absolute right-3 top-2 text-gray-400 text-sm"
-          aria-hidden="true"
-        />
-      </div>
-
-      {/* User info */}
-      <div className="flex items-center space-x-2">
-        {user ? (
-          <>
-            <small className="text-gray-400">
-              ¡Hola, {user.username || user.email.split('@')[0]}!
-            </small>
-            <FaUserCircle className="text-gray-400 text-3xl" />
-            <button
-              className="text-red-400 font-bold underline cursor-pointer"
-              onClick={handleLogout}
-              aria-label="Cerrar sesión"
+    return (
+        <header className="bg-[var(--color-header)] px-6 py-3 flex items-center justify-between flex-wrap">
+            <div className="flex items-center gap-4"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+                ref={menuRef}
             >
-              LOGOUT
-            </button>
-          </>
-        ) : (
-          <div
-            className="flex items-center space-x-2 cursor-pointer hover:text-gray-300"
-            onClick={handleLoginClick}
-            aria-label="Iniciar sesión"
-          >
-            <small className="text-gray-400">Entrar</small>
-            <FaUserCircle className="text-gray-400 text-3xl" />
-          </div>
-        )}
-      </div>
-    </header>
-  );
+                <button
+                    onClick={handleHomeClick}
+                    aria-label="Inicio"
+                >
+                    <GrGamepad className="text-[var(--color-mando)] text-2xl cursor-pointer" />
+                </button>
+
+                {/* Mobile menu toggle */}
+                <FaBars
+                    className="text-white text-xl cursor-pointer lg:hidden"
+                    aria-label="Menú"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                />
+
+                {/* Dropdown menu for desktop */}
+                {isMenuOpen && (
+                    <div className="absolute left-0 top-11 bg-gray-700 rounded-md shadow-xl z-10 lg:hidden">
+                        <ul className="py-2 text-sm text-gray-200">
+                            <li>
+                                <Link href="/juegos/tictactoe" className="block px-4 py-2 hover:bg-gray-600 hover:text-white">
+                                    Tic Tac Toe
+                                </Link>
+                            </li>
+                            <li>
+                                <Link href="/juegos/words" className="block px-4 py-2 hover:bg-gray-600 hover:text-white">
+                                    Words
+                                </Link>
+                            </li>
+                        </ul>
+                    </div>
+                )}
+
+                {/* Menu for larger screens */}
+                <div className="hidden lg:flex space-x-4">
+                    <Link href="/juegos/tictactoe" className="text-white hover:text-gray-400">Tic Tac Toe</Link>
+                    <Link href="/juegos/words" className="text-white hover:text-gray-400">Words</Link>
+                </div>
+            </div>
+
+            {/* Search bar and Dark Mode Toggle */}
+            <div className="flex items-center">
+                {/* Search Bar */}
+                <div className="relative lg:block hidden">
+                    <input
+                        type="text"
+                        placeholder="¿A qué jugamos hoy?"
+                        className="bg-gray-700 text-gray-400 text-sm px-4 py-2 rounded-full w-64 focus:outline-none"
+                        aria-label="Buscar juegos"
+                    />
+                    <FaSearch
+                        className="absolute right-3 top-2 text-gray-400 text-sm"
+                        aria-hidden="true"
+                    />
+                </div>
+
+                {/* Dark Mode Toggle */}
+                <MdOutlineDarkMode
+                    className="text-gray-400 text-xl cursor-pointer ml-4"
+                    onClick={() => setTema(tema === 'light' ? 'dark' : 'light')}
+                    aria-label="Cambiar tema"
+                />
+            </div>
+
+            {/* User info */}
+            <div className="flex items-center space-x-2">
+                {user ? (
+                    <>
+                        <small className="text-gray-400">
+                            ¡Hola, {user.username || user.email.split('@')[0]}!
+                        </small>
+                        <FaUserCircle className="text-gray-400 text-3xl" />
+                        <button
+                            className="text-red-400 font-bold underline cursor-pointer"
+                            onClick={handleLogout}
+                            aria-label="Cerrar sesión"
+                        >
+                            LOGOUT
+                        </button>
+                    </>
+                ) : (
+                    <div
+                        className="flex items-center space-x-2 cursor-pointer hover:text-gray-300"
+                        onClick={handleLoginClick}
+                        aria-label="Iniciar sesión"
+                    >
+                        <small className="text-gray-400">Entrar</small>
+                        <FaUserCircle className="text-gray-400 text-3xl" />
+                    </div>
+                )}
+            </div>
+        </header>
+    );
 };
 
 export default Header;

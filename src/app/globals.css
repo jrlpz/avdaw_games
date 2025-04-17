@@ -10,8 +10,23 @@
     --color-delete: #c95c44;
 
 
-    /*Modo oscuro*/
-    --dt-background: #1d1d39;
+
+    .tema-oscuro{
+      background-color: var(--color-fondo);
+ 
+   h1, h4, a{
+        color:var(--color-logo3);
+      }
+
+
+
+    }
+ .icono{
+    color: white;
+  }
+    /* .tema-claro{
+        background-color: #ffff00;
+    } */
 
  }
   
