@@ -5,13 +5,11 @@ import { useWindowSize } from 'react-use';
 import { FaTimes, FaRegCircle } from "react-icons/fa";
 import { GiTicTacToe } from "react-icons/gi";
 
-import { useTema } from '@/app/layout'; // Importa el hook useTema desde la ubicación correcta
-
 
 
 import Confetti from 'react-confetti'
 export default function TicTacToe() {
- const { tema } = useTema(); // Usa el hook useTema
+
 
     // Tablero
     const [board, setBoard] = useState<Array<string | null>>(Array(9).fill(null));
@@ -92,7 +90,8 @@ export default function TicTacToe() {
 
 
                     <h1 className="text-3xl font-bold">Tic Tac Toe</h1>
-                    <GiTicTacToe className={`text-2xl sm:text-3xl ${tema === 'dark' ? 'icono' : ''}`} />
+                    <GiTicTacToe className="text-3xl" />
+
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                     {board.map((value, index) => (

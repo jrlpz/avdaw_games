@@ -1,5 +1,4 @@
-'use client';
-import React, { useState, createContext, Dispatch, SetStateAction, FC, ReactNode } from 'react';
+import React from 'react';
 import './globals.css';
 import './layout.css';
 import Header from '@/layoutComponent/headerComponent/Header';
@@ -7,33 +6,28 @@ import Footer from '@/layoutComponent/footerComponent/Footer';
 import { Metadata } from 'next';
 
 interface RootLayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
-interface PropiedadesTema {
-  tema: string;
-  setTema: Dispatch<SetStateAction<string>>;
+
+export const metadata: Metadata = {
+  title: 'Avdaw Games',
+  description: 'Avdaw Games',
+  icons: {
+    icon: '/images/logo_claro_solo.png',
+  },
+};
+
+function handleHome(){
+  
 }
-
-const ContextoTema = createContext<PropiedadesTema>({
-  tema: 'light',
-  setTema: () => { },
-});
-
-export const useTema = () => React.useContext(ContextoTema); // Custom hook
-
-const RootLayout: FC<RootLayoutProps> = ({ children }) => {
-  const [tema, setTema] = useState('light');
-  console.log(tema);
-
+const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   return (
     <html lang="es">
-      <body className={`flex flex-col min-h-screen ${tema === 'dark' ? 'tema-oscuro' : 'tema-claro'}`}>
-        <ContextoTema.Provider value={{ tema, setTema }}>
-          <Header tema={tema} setTema={setTema} />
-          <main data-tema={tema} className="flex-grow">{children}</main>
-          <Footer />
-        </ContextoTema.Provider>
+      <body className="flex flex-col min-h-screen">
+        <Header/>
+        <main className="flex-grow">{children}</main>
+        <Footer />
       </body>
     </html>
   );

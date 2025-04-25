@@ -3,9 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useWindowSize } from 'react-use';
 import Confetti from 'react-confetti';
 import { GiAbstract050 } from "react-icons/gi";
-import { useTema } from '@/app/layout'; // Importa el hook useTema desde la ubicación correcta
-
-
 const WORDS = ['ARROZ', 'TARTA', 'QUESO', 'MANGO', 'PASTA', 'FRESA', 'LECHE'];
 type LetterState = 'correct' | 'present' | 'absent' | 'empty';
 
@@ -14,8 +11,7 @@ interface Tile {
     state: LetterState;
 }
 
-const WordleGame = () => {
-    const { tema } = useTema(); // Usa el hook useTema
+const WordleGame = ()=> {
     const [winner, setWinner] = useState(false);
     const [targetWord, setTargetWord] = useState('');
     const [currentGuess, setCurrentGuess] = useState('');
@@ -161,35 +157,35 @@ const WordleGame = () => {
                             recycle={false}
                         />
                     )}
-                    {rows.map((row, rowIndex) => (
+                    {rows.map((row, rowIndex)=> (
                         <div key={rowIndex} className="flex justify-center space-x-1">
                             {row.map(key => {
                                 const state = key.length === 1 ? keyState[key] : undefined;
                                 const colorClass = state ? getTileColor(state) : 'bg-gray-200';
                                 const isLarge = key.length > 1;
 
-                                return (
-                                    <button
-                                        key={key}
-                                        className={`${colorClass}
-                                ${isLarge
-                                                ? isMobile ? 'px-3 py-3 text-base' : 'px-5 py-3 text-lg'
-                                                : isMobile ? 'px-3 py-3 text-sm' : 'px-4 py-2 text-lg'
-                                            } rounded font-bold hover:brightness-110 active:scale-95 transition-all
-                                ${isMobile ? 'text-lg' : 'text-xl'}
-                                ${key === 'Enter' && isMobile
-                                                ? 'px-5 py-4 text-2xl  enter-button-movil'
-                                                : ''
-                                            }
-                                ${key === '⌫' && isMobile // Agrega esta condición
-                                                ? 'px-4 py-2 text-lg delete-button-movil' // Aplica la clase
-                                                : ''
-                                            }`}
-                                        onClick={() => handleVirtualKeyPress(key)}
-                                    >
-                                        {isMobile && key === 'Enter' ? '↵' : key}
-                                    </button>
-                                );
+                   return (
+                    <button
+                    key={key}
+                    className={`${colorClass}
+                        ${isLarge
+                            ? isMobile ? 'px-3 py-3 text-base' : 'px-5 py-3 text-lg'
+                            : isMobile ? 'px-3 py-3 text-sm' : 'px-4 py-2 text-lg'
+                        } rounded font-bold hover:brightness-110 active:scale-95 transition-all
+                        ${isMobile ? 'text-lg' : 'text-xl'}
+                        ${key === 'Enter' && isMobile
+                            ? 'px-5 py-4 text-2xl  enter-button-movil'
+                            : ''
+                        }
+                        ${key === '⌫' && isMobile // Agrega esta condición
+                            ? 'px-4 py-2 text-lg delete-button-movil' // Aplica la clase
+                            : ''
+                        }`}
+                    onClick={() => handleVirtualKeyPress(key)}
+                >
+                    {isMobile && key === 'Enter' ? '↵' : key}
+                </button>
+);
                             })}
                         </div>
                     ))}
@@ -207,7 +203,7 @@ const WordleGame = () => {
             setCurrentGuess(prev => (prev + key).slice(0, 5));
         }
     };
-    const colorIcono = tema === 'dark' ? 'red-500' : 'yellow-500';
+
     return (
         <div
             className="min-h-screen flex flex-col items-center pt-2 sm:pt-4 px-2"
@@ -217,18 +213,18 @@ const WordleGame = () => {
         >
             <div className="flex items-center space-x-2 m-2 sm:m-4">
                 <h1 className="text-2xl sm:text-3xl font-bold">Words</h1>
-                <GiAbstract050 className={`text-2xl sm:text-3xl ${tema === 'dark' ? 'icono' : ''}`} />
+                <GiAbstract050 className="text-2xl sm:text-3xl" />
             </div>
-
+            
             {message && (
-                <div className={`text-center text-sm sm:text-lg font-semibold mb-2
-                    ${gameOver && !winner ? 'text-red-600' :
-                        currentGuess === targetWord ? 'text-green-600 animate-bounce' : 'text-blue-400'
-                    }`}>
+                <div className={`text-center text-sm sm:text-lg font-semibold mb-2 ${
+                    gameOver && !winner ? 'text-red-600' : 
+                    currentGuess === targetWord ? 'text-green-600 animate-bounce' : 'text-gray-700'
+                }`}>
                     {message}
                 </div>
             )}
-
+            
             {gameOver && (
                 <button
                     className="m-2 sm:m-3 px-4 sm:px-6 py-1 sm:py-2 bg-blue-500 text-white font-bold rounded hover:bg-blue-600 transition-colors text-sm sm:text-base"
@@ -237,7 +233,7 @@ const WordleGame = () => {
                     Jugar de nuevo
                 </button>
             )}
-
+            
             <div className="space-y-1 sm:space-y-2 mb-2 sm:mb-4">
                 {Array(6).fill(null).map((_, rowIndex) => (
                     <div key={rowIndex} className="flex space-x-1 sm:space-x-2">
@@ -250,7 +246,7 @@ const WordleGame = () => {
             </div>
 
             {renderKeyboard()}
-
+            
             <div className="mt-2 sm:mt-4 text-center">
                 <small className="text-sm sm:text-sm block text-orange-600">Pista: comida. {targetWord.charAt(0)} _ _ _ _</small>
                 <small className="text-sm sm:text-sm  text-orange-600">Intentos restantes: {attemptsRemaining}</small>
