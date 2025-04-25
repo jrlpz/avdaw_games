@@ -206,7 +206,7 @@ const WordleGame = ()=> {
 
     return (
         <div
-            className="min-h-screen flex flex-col items-center pt-2 sm:pt-4 px-2"
+            className="flex flex-col items-center pt-2 sm:pt-4 px-2"
             tabIndex={0}
             onKeyDown={handleInput}
             autoFocus

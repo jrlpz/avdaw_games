@@ -4,8 +4,8 @@ import { FaBars, FaSearch, FaUserCircle } from "react-icons/fa";
 import { GrGamepad } from "react-icons/gr";
 import { useRouter } from 'next/navigation';
 import { useSyncExternalStore } from 'react';
-import Link from 'next/link';  // Import Link from next/link
-import './Header.module.css'; // Import CSS for mobile menu
+import Link from 'next/link';
+import styles from './Header.module.css'; // Import CSS Modules
 
 interface UserData {
   email: string;
@@ -38,8 +38,8 @@ function getServerSnapshot(): string | null {
 const Header: React.FC = () => {
   const router = useRouter();
   const [user, setUser] = useState<UserData | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);  // State for menu open/close
-  const menuRef = useRef<HTMLDivElement>(null); // Reference to the menu container
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // useSyncExternalStore with server snapshot support
   const storedEmail = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -65,7 +65,6 @@ const Header: React.FC = () => {
 
     loadUserData();
 
-    // Listen for storage events (changes from other tabs)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === 'userData') {
         loadUserData();
@@ -90,7 +89,6 @@ const Header: React.FC = () => {
     }
 
     try {
-      // Call logout API route if using Supabase auth
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch (error) {
       console.error("Logout error:", error);
@@ -98,9 +96,12 @@ const Header: React.FC = () => {
 
     setUser(null);
     router.push('/login');
-    router.refresh(); // Ensure page updates
+    router.refresh();
   };
 
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
 
   return (
     <header className="bg-[var(--color-header)] px-6 py-3 flex items-center justify-between flex-wrap">
@@ -112,36 +113,33 @@ const Header: React.FC = () => {
           <GrGamepad className="text-[var(--color-mando)] text-2xl cursor-pointer" />
         </button>
 
-        {/* Mobile menu toggle */}
         <FaBars
           className="text-white text-xl cursor-pointer lg:hidden"
           aria-label="Menú"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         />
 
-        {/* Mobile menu */}
-        <div className={`mobile-menu ${isMenuOpen ? 'open' : ''} lg:hidden`}>
+        <div className={`${styles['mobile-menu']} ${isMenuOpen ? styles.open : ''} lg:hidden`}>
           <ul className="py-2 text-sm text-gray-200">
             <li>
-              <Link href="/juegos/tictactoe" className="block px-4 py-2 hover:bg-gray-600 hover:text-white">
+              <Link href="/juegos/tictactoe" className="block px-4 py-2 hover:bg-gray-600 hover:text-white" onClick={closeMenu}>
                 Tic Tac Toe
               </Link>
             </li>
             <li>
-              <Link href="/juegos/words" className="block px-4 py-2 hover:bg-gray-600 hover:text-white">
+              <Link href="/juegos/words" className="block px-4 py-2 hover:bg-gray-600 hover:text-white" onClick={closeMenu}>
                 Words
               </Link>
             </li>
 
             <li>
-              <Link href="/chat" className="block px-4 py-2 hover:bg-gray-600 hover:text-white">
+              <Link href="/chat" className="block px-4 py-2 hover:bg-gray-600 hover:text-white" onClick={closeMenu}>
                 Chat
               </Link>
             </li>
           </ul>
         </div>
 
-        {/* Menu for larger screens */}
         <div className="hidden lg:flex space-x-4">
           <Link href="/juegos/tictactoe" className="text-white hover:text-gray-400">Tic Tac Toe</Link>
           <Link href="/juegos/words" className="text-white hover:text-gray-400">Words</Link>
@@ -149,7 +147,6 @@ const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Search bar */}
       <div className="relative hidden lg:block">
         <input
           type="text"
@@ -163,7 +160,6 @@ const Header: React.FC = () => {
         />
       </div>
 
-      {/* User info */}
       <div className="flex items-center space-x-2">
         {user ? (
           <>
