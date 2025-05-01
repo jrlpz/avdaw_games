@@ -1,8 +1,8 @@
 import React from 'react';
 import './globals.css';
 import './layout.css';
-import Header from '@/layoutComponent/headerComponent/Header';
-import Footer from '@/layoutComponent/footerComponent/Footer';
+import Header from '@/components/layout/headerComponent/Header';
+import Footer from '@/components/layout/footerComponent/Footer';
 import { Metadata } from 'next';
 
 interface RootLayoutProps {
@@ -25,7 +25,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   return (
     <html lang="es">
       <body className="flex flex-col min-h-screen">
-        <Header/>
+        <Header userData={null}/>
         <main className="flex-grow">{children}</main>
         <Footer />
       </body>
