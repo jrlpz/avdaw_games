@@ -78,33 +78,33 @@ export async function deleteSession() {
 
 
 export async function getCurrentSession() {
-  console.log('[getCurrentSession] Ejecutando...'); // Log 1: Inicio de la función
+  console.log('[getCurrentSession] Ejecutando...'); 
   const cookie = (await cookies()).get('session')?.value;
-  console.log(`[getCurrentSession] Cookie 'session' encontrada: ${!!cookie}`); // Log 2: ¿Cookie existe?
+  console.log(`[getCurrentSession] Cookie 'session' encontrada: ${!!cookie}`);
 
   if (!cookie) {
-    console.log('[getCurrentSession] No hay cookie, devolviendo null.'); // Log 3: Sale si no hay cookie
+    console.log('[getCurrentSession] No hay cookie, devolviendo null.'); 
     return null;
   }
 
   let session: SessionPayload | null = null;
   try {
-    // Asegúrate que 'decrypt' se llama correctamente
+ 
     session = await decrypt(cookie) as SessionPayload | null;
-    // ¡¡¡ESTE LOG ES CLAVE!!!
-    console.log('[getCurrentSession] Payload desencriptado:', session); // Log 4: ¿Qué contiene el payload? ¿Es null?
+ 
+    console.log('[getCurrentSession] Payload desencriptado:', session); 
   } catch (error) {
-    console.error('[getCurrentSession] Error durante decrypt:', error); // Log 5: Error desencriptando
+    console.error('[getCurrentSession] Error durante decrypt:', error); 
     return null;
   }
 
   if (!session?.userId) {
-     // Si el Log 4 mostró null, este log se ejecutará
-    console.log('[getCurrentSession] Payload es null o no contiene userId. Devolviendo null.'); // Log 6: Sale si no hay userId
+
+    console.log('[getCurrentSession] Payload es null o no contiene userId. Devolviendo null.'); 
     return null;
   }
 
-  console.log(`[getCurrentSession] Sesión válida encontrada. UserID: ${session.userId}, Email (del JWT): ${session.email}`); // Log 7: Datos básicos OK
+  console.log(`[getCurrentSession] Sesión válida encontrada. UserID: ${session.userId}, Email (del JWT): ${session.email}`); 
 
   const usernameFromDb = null;
   const emailFromDb = null;
@@ -113,14 +113,11 @@ export async function getCurrentSession() {
     console.error('[getCurrentSession] Error general de DB:', dbError);
   }
 
-  console.log('[getCurrentSession] Devolviendo datos de sesión procesados.'); // Log 8: Antes de devolver
+  console.log('[getCurrentSession] Devolviendo datos de sesión procesados.'); 
   return {
     isAuth: true,
     userId: session.userId,
     email: emailFromDb || session.email || '',
-    username: usernameFromDb || 'Usuario' // Puedes cambiar 'Usuario' por session.email si prefieres
+    username: usernameFromDb || 'Usuario' 
   };
 }
-
-// Asegúrate que tu función decrypt está definida o importada correctamente
-// async function decrypt(token: string): Promise<SessionPayload | null> { ... }

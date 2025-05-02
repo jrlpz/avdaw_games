@@ -18,29 +18,25 @@ export const metadata: Metadata = {
   },
 };
 
-// 1. Convierte el componente RootLayout en una función `async`
-//    Esto permite usar `await` dentro de él.
-// 2. Cambia la firma para que no use React.FC (más común para Server Components)
+
 export default async function RootLayout({ children }: RootLayoutProps) {
 
-  // 3. Llama a tu función para obtener los datos de la sesión actual en el servidor.
+ 
   const sessionData = await getCurrentSession();
 console.log(sessionData)
-  // 4. Prepara los datos que el componente Header espera.
-  //    Basado en la estructura de `getCurrentSession` y lo que `Header` necesita ({email, username} | null).
-  const headerUserData = sessionData?.isAuth // Verifica si hay una sesión válida
-    ? {
-        email: sessionData.email || '', // Pasa el email (o un string vacío si no existe)
-        username: sessionData.username || 'Usuario' // Pasa el username (o un fallback si no existe)
-      }
-    : null; // Si no hay sesión, pasa null
 
-  // La función handleHome no es necesaria aquí, puedes quitarla.
+  const headerUserData = sessionData?.isAuth 
+    ? {
+        email: sessionData.email || '', 
+        username: sessionData.username || 'Usuario' 
+      }
+    : null; 
+
+ 
 
   return (
     <html lang="es">
       <body className="flex flex-col min-h-screen">
-        {/* 5. Pasa los datos preparados (`headerUserData`) al componente Header */}
         <Header userData={headerUserData} />
         <main className="flex-grow">{children}</main>
         <Footer />
