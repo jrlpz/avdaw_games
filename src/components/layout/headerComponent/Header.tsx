@@ -3,10 +3,10 @@
 import React, { useState, useRef } from 'react';
 import { FaBars, FaSearch, FaUserCircle } from "react-icons/fa";
 import { GrGamepad } from "react-icons/gr";
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './Header.module.css';
-// import { logout } from '@/app/login/actions'; 
+ import { logoutAction } from './action'; 
 
 interface UserData {
   email: string;
@@ -19,6 +19,10 @@ const Header = ({ userData }: { userData: UserData | null }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
+ 
+  const pathname = usePathname(); 
+  const isLoginPage = pathname === '/login';
+
   const handleHomeClick = () => {
     router.push('/');
   };
@@ -27,9 +31,13 @@ const Header = ({ userData }: { userData: UserData | null }) => {
     router.push('/login');
   };
 
+  const handleRegistroClick = () => {
+    router.push('/login');
+  };
+
   const handleLogout = async () => {
     try {
-      // await logout();
+       await logoutAction();
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -153,11 +161,11 @@ const Header = ({ userData }: { userData: UserData | null }) => {
 
       <div className="flex items-center space-x-2">
         {userData ? (
+        
           <>
             <small className="text-gray-400">
-              ¡Hola, {userData.username}!
+              ¡Hola, { userData.email}! 
             </small>
-            <FaUserCircle className="text-gray-400 text-3xl" />
             <small>
             <button
               className="text-[var(--color-mando)] font-bold underline cursor-pointer"
@@ -167,17 +175,45 @@ const Header = ({ userData }: { userData: UserData | null }) => {
               Cerrar sesión
             </button>
             </small>
-          
+            <div className="relative group">
+              <button className="flex items-center">
+                 <FaUserCircle className="text-gray-400 text-3xl cursor-pointer" />
+              </button>
+              <div className="absolute hidden group-hover:block bg-gray-800 right-0 mt-1 min-w-[150px] rounded-md shadow-lg z-20 p-2">
+                 {userData.email && <p className="text-xs text-gray-400 px-2 pb-2 truncate">{userData.email}</p>}
+                 <button
+                   className="w-full text-left text-[var(--color-mando)] font-bold px-2 py-1 hover:bg-gray-700 rounded text-sm"
+                   onClick={handleLogout}
+                   aria-label="Cerrar sesión"
+                 >
+                   Cerrar sesión
+                 </button>
+              </div>
+            </div>
           </>
         ) : (
-          <div
-            className="flex items-center space-x-2 cursor-pointer hover:text-gray-300"
-            onClick={handleLoginClick}
-            aria-label="Iniciar sesión"
-          >
-            <small className="text-gray-400">Entrar</small>
-            <FaUserCircle className="text-gray-400 text-3xl" />
-          </div>
+        
+          isLoginPage ? (
+         
+            <div
+              className="flex items-center space-x-2 cursor-pointer text-gray-400 hover:text-white"
+              onClick={handleRegistroClick} 
+              aria-label="Registrarse"
+            >
+              <small>Registrarse</small>
+              <FaUserCircle className="text-3xl" /> 
+            </div>
+          ) : (
+            // Si NO estamos en /login, muestra "Entrar"
+            <div
+              className="flex items-center space-x-2 cursor-pointer text-gray-400 hover:text-white" 
+              onClick={handleLoginClick} 
+              aria-label="Iniciar sesión"
+            >
+              <small>Entrar</small>
+              <FaUserCircle className="text-3xl" />
+            </div>
+          )
         )}
       </div>
     </header>
