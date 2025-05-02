@@ -78,9 +78,7 @@ export async function deleteSession() {
 
 
 export async function getCurrentSession() {
-  console.log('[getCurrentSession] Ejecutando...'); 
   const cookie = (await cookies()).get('session')?.value;
-  console.log(`[getCurrentSession] Cookie 'session' encontrada: ${!!cookie}`);
 
   if (!cookie) {
     console.log('[getCurrentSession] No hay cookie, devolviendo null.'); 
@@ -92,7 +90,6 @@ export async function getCurrentSession() {
  
     session = await decrypt(cookie) as SessionPayload | null;
  
-    console.log('[getCurrentSession] Payload desencriptado:', session); 
   } catch (error) {
     console.error('[getCurrentSession] Error durante decrypt:', error); 
     return null;
@@ -104,7 +101,6 @@ export async function getCurrentSession() {
     return null;
   }
 
-  console.log(`[getCurrentSession] Sesión válida encontrada. UserID: ${session.userId}, Email (del JWT): ${session.email}`); 
 
   const usernameFromDb = null;
   const emailFromDb = null;

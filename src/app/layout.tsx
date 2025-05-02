@@ -23,7 +23,6 @@ export default async function RootLayout({ children }: RootLayoutProps) {
 
  
   const sessionData = await getCurrentSession();
-console.log(sessionData)
 
   const headerUserData = sessionData?.isAuth 
     ? {

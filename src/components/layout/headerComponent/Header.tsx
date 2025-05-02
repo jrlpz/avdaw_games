@@ -32,7 +32,7 @@ const Header = ({ userData }: { userData: UserData | null }) => {
   };
 
   const handleRegistroClick = () => {
-    router.push('/login');
+    router.push('/registro');
   };
 
   const handleLogout = async () => {

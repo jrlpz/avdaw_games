@@ -34,14 +34,22 @@ export async function registro(prevState: FormState, formData: FormData): Promis
     });
 
     if (authError) {
+      console.error('Supabase Auth Error:', authError); 
+    
       return {
-        errors: { 
-          email: [authError.message.includes('email') ? 'El email ya está registrado' : 'Error de autenticación'],
-          ...(authError.message.includes('password') && { password: ['Contraseña no válida'] })
-        },
-        message: 'Error al registrar usuario'
+        message: authError.message 
       };
     }
+
+    // if (authError) {
+    //   return {
+    //     errors: { 
+    //       email: [authError.message.includes('email') ? 'El email ya está registrado' : 'Error de autenticación'],
+    //       ...(authError.message.includes('password') && { password: ['Contraseña no válida'] })
+    //     },
+    //     message: 'Error al registrar usuario'
+    //   };
+    // }
 
     // 3. Insertar en tabla usuarios
     if (authData.user) {
