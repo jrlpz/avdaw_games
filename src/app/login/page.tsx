@@ -1,30 +1,52 @@
 'use client';
-import Image from 'next/image';
-import { useActionState, useEffect } from 'react';
+
+import { useFormStatus } from 'react-dom';
+import { useActionState, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import {login} from './actions'; // Asegúrate de que la ruta sea correct
+import Image from 'next/image';
+import { login } from './actions'; // Assuming actions.ts is in the same directory
+import type { LoginState } from '@/app/auth/definitions'; // Adjust path if needed
+
+const initialState: LoginState = { message: undefined, errors: {}, success: false, redirectTo: undefined };
 
 export default function Login() {
   const router = useRouter();
-  const [state, formAction, isPending] = useActionState(login, { error: null });
+  const [state, formAction] = useActionState<LoginState, FormData>(login, initialState);
 
-  // Manejar redirección cuando el login es exitoso
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
   useEffect(() => {
     if (state?.success && state.redirectTo) {
       router.push(state.redirectTo);
     }
   }, [state, router]);
 
-  const handleRegisterClick = ()=> {
-    router.
-    push('/registro');
+  const handleRegisterClick = () => {
+    router.push('/registro');
   };
+
+  function SubmitButton() {
+    const { pending } = useFormStatus();
+
+    return (
+      <button
+        type="submit"
+        disabled={pending}
+        className="py-3 px-6 text-sm font-medium tracking-wider rounded-md text-white bg-[var(--color-logo1)] hover:bg-[var(--color-logo2)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+        aria-disabled={pending}
+      >
+        {pending ? 'Cargando...' : 'Entrar'}
+      </button>
+    );
+  }
+
   return (
     <div className="max-w-4xl max-sm:max-w-lg mx-auto p-6 mt-25">
       <div className="text-center mb-12 sm:mb-20">
         <div className="flex items-center gap-6 justify-center">
           <Image
-            src="/images/logo_oscuro.png"
+            src="/images/logo_oscuro.png" // Ensure this path is correct
             width={150}
             height={150}
             alt="Logo"
@@ -36,6 +58,17 @@ export default function Login() {
         </div>
       </div>
 
+      {state?.message && !state.success && (
+        <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-md text-sm">
+          {state.message}
+        </div>
+      )}
+      {state?.error && (
+          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-md text-sm">
+              {state.error}
+          </div>
+      )}
+
       <form action={formAction}>
         <div className="grid sm:grid-cols-1 gap-6">
           <div>
@@ -43,10 +76,17 @@ export default function Login() {
             <input
               name="email"
               type="email"
-              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded-md focus:bg-transparent outline-blue-500 transition-all"
-              placeholder="Introduce el email"
-              required
-            />
+    
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded-md focus:bg-transparent outline-blue-500 transition-all ${state?.errors?.email ? 'border border-red-500' : ''}`}
+              placeholder="Introduce el email" />
+
+            {state?.errors?.email && (
+              <p className="mt-1 text-sm text-red-500">
+                {state.errors.email.join(', ')}
+              </p>
+            )}
           </div>
 
           <div>
@@ -54,28 +94,22 @@ export default function Login() {
             <input
               name="password"
               type="password"
-              className="bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded-md focus:bg-transparent outline-blue-500 transition-all"
-              placeholder="Introduce la contraseña"
-              required
-              minLength={6}
-            />
+              
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`bg-slate-100 w-full text-slate-800 text-sm px-4 py-3 rounded-md focus:bg-transparent outline-blue-500 transition-all ${state?.errors?.password ? 'border border-red-500' : ''}`}
+              placeholder="Introduce la contraseña" />
+
+            {state?.errors?.password && (
+              <p className="mt-1 text-sm text-red-500">
+                {state.errors.password.join(', ')}
+              </p>
+            )}
           </div>
         </div>
 
-        {state?.error && (
-          <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-md text-sm text-center">
-            {state.error}
-          </div>
-        )}
-
         <div className="mt-8 text-center">
-          <button
-            type="submit"
-            disabled={isPending}
-            className="py-3 px-6 text-sm font-medium tracking-wider rounded-md text-white bg-[var(--color-logo1)] hover:bg-[var(--color-logo2)] transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {isPending ? 'Iniciando sesión...' : 'Entrar'}
-          </button>
+           <SubmitButton />
         </div>
       </form>
 

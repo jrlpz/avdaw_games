@@ -2,30 +2,37 @@
 
 import { cookies } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
-
-interface LoginState {
-  error: string | null;
-  success?: boolean;
-  redirectTo?: string;
-}
+import {SigninFormSchema, LoginState } from '@/app/auth/definitions';
+import { createSession } from '../auth/session';
 export async function login(prevState: LoginState, formData: FormData): Promise<LoginState> {
   const supabase = await createClient();
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
 
-  if (!email || !password) {
-    return { error: 'Email y contraseña son requeridos' };
-  }
+    // 1. Validación con Zod
+    const validationResult = SigninFormSchema.safeParse({
+      email: formData.get('email'),
+      password: formData.get('password'),
+    });
+  
+    if (!validationResult.success) {
+      return {
+        errors: validationResult.error.flatten().fieldErrors,
+        message: 'Credenciales no válidos',
+      };
+    }
+  
+    
+  const { email, password } = validationResult.data;
 
   try {
-    // 1. Autenticar al usuario
+    // 2. Autenticar al usuario
     const { data: { user, session }, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
+    
     if (error || !user) {
-      return { error: error?.message || 'Credenciales inválidas' };
+      return { message: 'Credenciales no válidos, vuelve a intentarlo.' };
     }
 
     // 2. Obtener datos adicionales del usuario
@@ -35,20 +42,14 @@ export async function login(prevState: LoginState, formData: FormData): Promise<
       .eq('id', user.id)
       .single();
 
-    // 3. Configurar la cookie de sesión
-    (await
-      // 3. Configurar la cookie de sesión
-      cookies()).set('sb-access-token', session?.access_token || '', {
-      path: '/',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7, // 1 semana
-    });
+    // 3. Configurar la cookie de sesión   
+    await createSession(user.id, email);
 
     // 4. Indicar éxito y URL de redirección
-    return { 
-      error: null, 
+    return {
+      errors: undefined,
       success: true,
-      redirectTo: '/' // Cambia esto por tu ruta deseada
+      redirectTo: '/' 
     };
 
   } catch (error) {
