@@ -1,60 +1,109 @@
+/* Estilos generales */
 .home-page {
-    font-family: sans-serif;
-    padding: 20px;
-    text-align: center;
-  }
-  
-  .minijuegos-container {
-    display: flex;
-    flex-wrap: wrap; /* Permite que los elementos se envuelvan a la siguiente fila */
-    justify-content: center; /* Centra los elementos horizontalmente */
-    gap: 20px; /* Espacio entre los elementos */
-    margin-top: 20px;
-  
-  }
-  
-  .minijuego-item {
-    width: 300px; /* Ancho fijo para cada elemento */
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    overflow: hidden; /* Evita que la imagen sobresalga */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease-in-out; /* Animación suave al pasar el mouse */
-  }
-  
-  .minijuego-item:hover {
-    transform: scale(1.05); /* Aumenta el tamaño al pasar el mouse */
-  }
-  
-  .minijuego-item a {
-    display: block;
-    text-decoration: none;
-    color: #333;
-    padding: 10px;
-  }
-  
-  .minijuego-item img {
-    width: 100%; /* La imagen ocupa todo el ancho del contenedor */
-    height: auto; /* Mantiene la proporción de la imagen */
-    display: block; /* Elimina el espacio debajo de la imagen */
-  }
-  
-  .minijuego-item h3 {
-    margin-top: 10px;
-    font-size: 1.2em;
-    text-align: center;
-  }
-  
-  .minijuego-item p {
-    font-size: 0.9em;
-    text-align: center;
-    margin-bottom: 10px;
-  }
-  
-  footer {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-    font-size: 0.8em;
-    color: #777;
-  }
+  font-family: sans-serif;
+  padding: 20px;
+  text-align: center;
+}
+
+.minijuegos-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.minijuego-item {
+  width: 350px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease-in-out;
+  background-color: white;
+}
+
+.minijuego-item:hover {
+  /* transform: scale(1.03); */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e0;
+  padding: 10px;
+}
+
+/* Imagen */
+.minijuego-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  margin: 0;
+  padding: 0;
+}
+
+/* Contenedor principal (imagen + texto) */
+.minijuego-content {
+  position: relative;
+
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.minijuego-item:hover .minijuego-content {
+  border: 3px solid black;
+  border-radius: 12px; /* Bordes redondeados en hover */
+}
+
+/* Área de texto/flecha */
+.minijuego-text {
+  padding: 1rem;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  background: white;
+  border-radius: 0 0 8px 8px;
+  transition: all 0.3s ease;
+}
+
+
+
+/* Fondo gris al hacer hover */
+.minijuego-item:hover .minijuego-text {
+  background-color: #f0f0f0;
+}
+
+/* Ocultar texto en hover */
+.minijuego-item:hover .minijuego-text h3,
+.minijuego-item:hover .minijuego-text p {
+  opacity: 0;
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Flecha (ahora en JSX) */
+.minijuego-arrow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  color: #4a5568;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.minijuego-item:hover .minijuego-arrow {
+  opacity: 1;
+}
+
+/* Títulos */
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+}

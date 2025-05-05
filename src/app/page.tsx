@@ -2,8 +2,11 @@ import React from 'react';
 import './HomePage.css';
 import Image from 'next/image';
 import Link from 'next/link';
+import { VscTriangleDown } from "react-icons/vsc";
 
 export default function HomePage() {
+
+
   const minijuegosSinglePlayer = [
     {
       id: 'tictactoe',
@@ -22,21 +25,30 @@ export default function HomePage() {
   ];
 
   const minijuegosMultiPlayer = [
+    // TicTacToe Multijugador Online (este enlazará a /juegos/multiplayer/tictactoe)
     {
       id: 'tictactoe',
-      nombre: 'TicTacToe (2J)',
-      descripcion: 'El clásico 3 en raya, juega con amigos',
-      imagen: '/images/tictactoe.png', // Puedes usar una imagen diferente
-      modo: 'multi'
+      nombre: 'TicTacToe (2J - Online)',
+      descripcion: 'El clásico 3 en raya, juega con amigos online.',
+      imagen: '/images/tictactoe.png',
+      modo: 'multi',
+      pathPrefix: '/juegos/multiplayer'
     },
-    // {
-    //   id: 'words',
-    //   nombre: 'Words (2J)',
-    //   descripcion: '¿Serás capaz de adivinar la palabra contra otros?',
-    //   imagen: '/images/words.png', // Puedes usar una imagen diferente
-    //   modo: 'multi'
-    // },
+
+    // TicTacToe Multijugador Local (este enlazará a /juegos/local/tictactoe-local)
+    {
+      id: 'tictactoe_local',
+      nombre: 'TicTacToe (2J - Local)',
+      descripcion: 'El clásico 3 en raya, juega con amigos localmente.',
+      imagen: '/images/tictactoe.png',
+      modo: 'multi',
+      pathPrefix: '/juegos/local'
+    },
+
+
   ];
+
+
 
   return (
     <div className="home-page">
@@ -61,20 +73,27 @@ export default function HomePage() {
           Un Jugador
         </h2>
         <div className="minijuegos-container">
-          {minijuegosSinglePlayer.map((juego) => (
-            <div className="minijuego-item" key={`single-${juego.id}`}>
-              <Link href={`/juegos/${juego.id}`}>
-                <Image
-                  src={juego.imagen}
-                  alt={juego.descripcion}
-                  width={300}
-                  height={200}
-                />
-                <h3>{juego.nombre}</h3>
-                <p>{juego.descripcion}</p>
-              </Link>
-            </div>
-          ))}
+        {minijuegosSinglePlayer.map((juego) => (
+  <div className="minijuego-item" key={`single-${juego.id}`}>
+    <Link href={`/juegos/${juego.id}`}>
+      <div className="minijuego-content"> {/* Este es el contenedor con borde */}
+        <Image
+          src={juego.imagen}
+          alt={juego.descripcion}
+          width={300}
+          height={200}
+       
+          className="minijuego-image" 
+        />
+        <div className="minijuego-text">
+          <h3>{juego.nombre}</h3>
+          <p>{juego.descripcion}</p>
+          <span className="minijuego-arrow"><VscTriangleDown/></span>
+        </div>
+      </div>
+    </Link>
+  </div>
+))}
         </div>
       </div>
 
@@ -85,16 +104,23 @@ export default function HomePage() {
         </h2>
         <div className="minijuegos-container">
           {minijuegosMultiPlayer.map((juego) => (
+
             <div className="minijuego-item" key={`multi-${juego.id}`}>
-              <Link href={`/juegos/multiplayer/${juego.id}`}>
+              <Link href={`${juego.pathPrefix}/${juego.id}`}>
+              <div className="minijuego-content"> 
                 <Image
                   src={juego.imagen}
                   alt={juego.descripcion}
                   width={300}
                   height={200}
+          className="minijuego-image" 
                 />
-                <h3>{juego.nombre}</h3>
-                <p>{juego.descripcion}</p>
+               <div className="minijuego-text">
+          <h3>{juego.nombre}</h3>
+          <p>{juego.descripcion}</p>
+          <span className="minijuego-arrow"><VscTriangleDown/></span>
+        </div>
+        </div>
               </Link>
             </div>
           ))}

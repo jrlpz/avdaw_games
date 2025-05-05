@@ -91,7 +91,13 @@ const Header = ({ userData }: { userData: UserData | null }) => {
             <ul>
               <li>
                 <Link href="/juegos/multiplayer/tictactoe" className="block px-6 py-2 hover:bg-gray-600 hover:text-white" onClick={closeMenu}>
-                  Tic Tac Toe (2J)
+                  Tic Tac Toe (Online)
+                </Link>
+              </li>
+
+              <li>
+                <Link href="/juegos/local/tictactoe_local" className="block px-6 py-2 hover:bg-gray-600 hover:text-white" onClick={closeMenu}>
+                  Tic Tac Toe (Local)
                 </Link>
               </li>
             </ul>
@@ -129,9 +135,11 @@ const Header = ({ userData }: { userData: UserData | null }) => {
             <div className="absolute hidden group-hover:block bg-gray-800 min-w-[200px] rounded-md shadow-lg z-10">
               <div className="py-1">
                 <Link href="/juegos/multiplayer/tictactoe" className="block px-4 py-2 text-white hover:bg-gray-700">
-                  Tic Tac Toe (2J)
+                  Tic Tac Toe (Online)
                 </Link>
-             
+                <Link href="/juegos/local/tictactoe_local" className="block px-4 py-2 text-white hover:bg-gray-700">
+                  Tic Tac Toe (Local)
+                </Link>
               </div>
             </div>
           </div>
