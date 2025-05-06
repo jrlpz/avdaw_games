@@ -16,11 +16,12 @@ export default function TicTacToe() {
     // Tablero
     const [board, setBoard] = useState<Array<string | null>>(Array(9).fill(null));
 
-    // Turno (true = Humano 'X', false = IA 'O')
-    const [isNext, setIsNext] = useState(true); // Humano empieza
-
+    //Turno aleatorio usando random para decidir quién empieza
+    const getRandomBoolean = () => Math.random() < 0.5; // devuelve true o false
+    const [isNext, setIsNext] = useState<null | boolean>(null); 
+    
     // Ganador
-    const calculateWinner = (squares: Array<string | null>): string | null => { // Added return type
+    const calculateWinner = (squares: Array<string | null>): string | null => { 
         const lines = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8], // Filas
             [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columnas
@@ -30,7 +31,7 @@ export default function TicTacToe() {
         for (let i = 0; i < lines.length; i++) {
             const [a, b, c] = lines[i];
             if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-                return squares[a]; // Devuelve 'X' o 'O'
+                return squares[a]; 
             }
         }
         return null; // No hay ganador
@@ -45,9 +46,10 @@ export default function TicTacToe() {
 
     // --- Lógica de la IA ---
 
-    // Encuentra el mejor movimiento para la IA ('O')
+    // Encuentra el mejor movimiento para la IA
     const findBestMove = (currentBoard: Array<string | null>): number => {
-        // 1. Comprobar si la IA puede ganar
+      
+        // 1. Comprueba si puede ganar
         for (let i = 0; i < 9; i++) {
             if (!currentBoard[i]) {
                 const tempBoard = currentBoard.slice();
@@ -58,7 +60,7 @@ export default function TicTacToe() {
             }
         }
 
-        // 2. Comprobar si el Humano puede ganar y bloquearlo
+        // 2. Comprueba si el jugador puede ganar y bloquearlo
         for (let i = 0; i < 9; i++) {
             if (!currentBoard[i]) {
                 const tempBoard = currentBoard.slice();
@@ -69,12 +71,12 @@ export default function TicTacToe() {
             }
         }
 
-        // 3. Tomar el centro si está libre
+        // 3. Toma el centro si está libre
         if (!currentBoard[4]) {
             return 4;
         }
 
-        // 4. Tomar una esquina libre
+        // 4. Toma una esquina libre
         const corners = [0, 2, 6, 8];
         for (const corner of corners) {
             if (!currentBoard[corner]) {
@@ -82,7 +84,7 @@ export default function TicTacToe() {
             }
         }
 
-        // 5. Tomar un lado libre
+        // 5. Toma un lado libre
         const sides = [1, 3, 5, 7];
         for (const side of sides) {
             if (!currentBoard[side]) {
@@ -90,35 +92,42 @@ export default function TicTacToe() {
             }
         }
 
-        // 6. (Fallback) Tomar la primera casilla vacía (no debería ser necesario si la lógica anterior es completa)
+        // 6. Tomar la primera casilla vacía (por si falla algo en la lógica anterior)
          for (let i = 0; i < 9; i++) {
             if (!currentBoard[i]) {
                 return i;
             }
         }
 
-        return -1; // No debería ocurrir en un juego normal
+        return -1; // Por si algo va mal, no debería llegar nunca.
     };
 
-    // --- Efecto para el turno de la IA ---
+    // --- Efectos para el turno de la IA ---
     useEffect(() => {
+        if (isNext === null) {
+          setIsNext(Math.random() < 0.5);
+        }
+      }, [isNext]);
+
+    useEffect(() => {
+        
         // Si es el turno de la IA, no hay ganador y no es empate
         if (!isNext && !winner && !isDraw) {
-            // Añade un pequeño retraso para simular el "pensamiento"
+            // Añade retraso para simular que la IA piensa
             const timer = setTimeout(() => {
                 const bestMove = findBestMove(board);
-                if (bestMove !== -1 && !board[bestMove]) { // Asegurarse de que la casilla esté realmente vacía
+                if (bestMove !== -1 && !board[bestMove]) {
                     const newBoard = board.slice();
                     newBoard[bestMove] = AI_PLAYER;
                     setBoard(newBoard);
                     setIsNext(true); // Cambiar el turno de vuelta al humano
                 }
-            }, 500); // Retraso de 500ms
+            }, 500); 
 
             // Limpiar el temporizador si el componente se desmonta o las dependencias cambian
             return () => clearTimeout(timer);
         }
-    }, [isNext, board, winner, isDraw]); // Dependencias del efecto
+    }, [isNext, board, winner, isDraw]); 
 
 
     // --- Manejador de Clic del Humano ---
@@ -144,13 +153,20 @@ export default function TicTacToe() {
         setIsNext(false);
     };
 
-    // --- Reiniciar Juego ---
+
+    // --- Reiniciar Juego Aleatorio---
     const resetGame = () => {
         setBoard(Array(9).fill(null));
-        setIsNext(true); // Humano empieza siempre al reiniciar
-    };
-
+        setIsNext(null); // Se volverá a inicializar aleatoriamente en useEffect
+      };
+      
+    
     // --- Renderizado ---
+
+    if (isNext === null) {
+        return <div className="text-center p-4 text-xl">Cargando...</div>;
+      }
+
     return (
         <div>
             {winner && (
@@ -158,8 +174,8 @@ export default function TicTacToe() {
                     width={width}
                     height={height}
                     recycle={false} // Para que se detenga después de un tiempo
-                    numberOfPieces={winner === HUMAN_PLAYER ? 200 : 50} // Menos confeti si gana la IA ;)
-                    style={{ zIndex: 10 }} // Asegúrate de que esté por encima de otros elementos si es necesario
+                    numberOfPieces={winner === HUMAN_PLAYER ? 200 : 50} // Menos confeti si gana la IA 
+                    style={{ zIndex: -1 }} 
                 />)
             }
 
@@ -169,23 +185,23 @@ export default function TicTacToe() {
                     <GiTicTacToe className="text-3xl" />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                    {board.map((value, index) => (
-                        <button
-                            key={index}
-                            className={`w-16 h-16 text-xl font-semibold border-2 border-gray-700 rounded-md flex items-center justify-center
-                                       ${isNext && !value && !winner ? 'bg-white hover:bg-gray-200 cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}
-                                       focus:outline-none`}
-                            onClick={() => handleClick(index)}
-                            disabled={!isNext || !!value || !!winner || isDraw} // Deshabilitar si no es turno del humano, está ocupada o el juego terminó
-                        >
-                            {value === HUMAN_PLAYER ? <FaTimes className="text-red-500 text-3xl" /> :
-                                value === AI_PLAYER ? <FaRegCircle className="text-blue-500 text-3xl" /> : null}
-                        </button>
-                    ))}
-                </div>
+                    <div className="grid grid-cols-3 gap-4">
+                        {board.map((value, index) => (
+                            <button
+                                key={index}
+                                className={`w-24 h-24 text-xl font-semibold border-2 border-gray-700 rounded-md flex items-center justify-center
+                                        ${isNext && !value && !winner ? 'bg-white hover:bg-gray-200 cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}
+                                        focus:outline-none`}
+                                onClick={() => handleClick(index)}
+                                disabled={!isNext || !!value || !!winner || isDraw} // Deshabilitar si no es turno del humano, está ocupada o el juego terminó
+                            >
+                                {value === HUMAN_PLAYER ? <FaTimes className="text-red-500 text-3xl" /> :
+                                    value === AI_PLAYER ? <FaRegCircle className="text-blue-500 text-3xl" /> : null}
+                            </button>
+                        ))}
+                    </div>
 
-                <div className="text-xl h-8"> {/* Añadido h-8 para evitar saltos de layout */}
+                <div className="text-xl h-8"> 
                     {winner
                         ? <p className={winner === HUMAN_PLAYER ? "text-green-500" : "text-red-600"}>
                             {winner === HUMAN_PLAYER ? '¡Ganaste!' : 'Gana la IA (' + winner + ')'}

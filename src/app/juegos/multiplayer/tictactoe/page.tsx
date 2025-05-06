@@ -268,7 +268,7 @@ export default function TicTacToe() {
                         {board.map((value, index) => (
                             <button
                                 key={index}
-                                className="w-16 h-16 text-xl font-semibold border-2 border-gray-700 rounded-md flex items-center justify-center bg-white hover:bg-gray-200 focus:outline-none"
+                                className="w-24 h-24 text-xl font-semibold border-2 border-gray-700 rounded-md flex items-center justify-center bg-white hover:bg-gray-200 focus:outline-none"
                                 onClick={() => handleClick(index)}
                                 disabled={!myTurn || value !== null || winner !== null} //desactivar si no es mi turno o si esta usado o si gano alguien
                             >

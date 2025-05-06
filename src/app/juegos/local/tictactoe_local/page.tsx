@@ -81,6 +81,7 @@ export default function TicTacToe() {
                 width={width}
                 height={height}
                 style={{zIndex:-1}}
+                
             />)
             }
 
@@ -97,7 +98,7 @@ export default function TicTacToe() {
                     {board.map((value, index) => (
                         <button
                             key={index}
-                            className="w-16 h-16 text-xl font-semibold border-2 border-gray-700 rounded-md flex items-center justify-center bg-white hover:bg-gray-200 focus:outline-none"
+                            className="w-24 h-24 text-xl font-semibold border-2 border-gray-700 rounded-md flex items-center justify-center bg-white hover:bg-gray-200 focus:outline-none"
                             onClick={() => handleClick(index)}
                         >
                             {value === 'X' ? <FaTimes className="text-red-500 text-3xl" /> :

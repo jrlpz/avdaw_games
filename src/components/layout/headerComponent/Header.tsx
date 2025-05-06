@@ -57,13 +57,15 @@ const Header = ({ userData }: { userData: UserData | null }) => {
   return (
     <header className="bg-[var(--color-header)] px-6 py-3 flex items-center justify-between flex-wrap">
       <div className="flex items-center gap-4">
+     
         <button
           onClick={handleHomeClick}
           aria-label="Inicio"
         >
           <GrGamepad className="text-[var(--color-mando)] text-2xl cursor-pointer" />
+       
         </button>
-
+   
         <FaBars
           className="text-white text-xl cursor-pointer lg:hidden"
           aria-label="Menú"
@@ -148,7 +150,10 @@ const Header = ({ userData }: { userData: UserData | null }) => {
         </div>
       </div>
 
-      <div className="relative hidden lg:block">
+
+      {/*
+       //! PENDIENTE barra de búsqueda
+      // <div className="relative hidden lg:block">
         <form onSubmit={handleSearch}>
           <input
             type="text"
@@ -165,7 +170,8 @@ const Header = ({ userData }: { userData: UserData | null }) => {
             />
           </button>
         </form>
-      </div>
+      </div> 
+      */}
 
       <div className="flex items-center space-x-2">
         {userData ? (

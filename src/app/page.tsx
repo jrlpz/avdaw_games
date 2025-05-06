@@ -7,6 +7,7 @@ import { VscTriangleDown } from "react-icons/vsc";
 export default function HomePage() {
 
 
+//---Migrar info de juegos a base de datos
   const minijuegosSinglePlayer = [
     {
       id: 'tictactoe',
@@ -30,7 +31,7 @@ export default function HomePage() {
       id: 'tictactoe',
       nombre: 'TicTacToe (2J - Online)',
       descripcion: 'El clásico 3 en raya, juega con amigos online.',
-      imagen: '/images/tictactoe.png',
+      imagen: '/images/tictactoe2.png',
       modo: 'multi',
       pathPrefix: '/juegos/multiplayer'
     },
@@ -40,15 +41,14 @@ export default function HomePage() {
       id: 'tictactoe_local',
       nombre: 'TicTacToe (2J - Local)',
       descripcion: 'El clásico 3 en raya, juega con amigos localmente.',
-      imagen: '/images/tictactoe.png',
+      imagen: '/images/tictactoe3.png',
       modo: 'multi',
       pathPrefix: '/juegos/local'
     },
 
 
   ];
-
-
+//--------------------------------------------
 
   return (
     <div className="home-page">
@@ -76,7 +76,7 @@ export default function HomePage() {
         {minijuegosSinglePlayer.map((juego) => (
   <div className="minijuego-item" key={`single-${juego.id}`}>
     <Link href={`/juegos/${juego.id}`}>
-      <div className="minijuego-content"> {/* Este es el contenedor con borde */}
+      <div className="minijuego-content">
         <Image
           src={juego.imagen}
           alt={juego.descripcion}
