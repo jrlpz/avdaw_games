@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -15,6 +14,18 @@ import { useWindowSize } from 'react-use';
 interface Player {
   id: string;
   name: string;
+}
+
+interface RoomUpdatePayload {
+  new: {
+    board: number[];
+    next_player: string | null;
+    winner: string | null;
+  };
+}
+
+interface PresenceState {
+  [id: string]: Array<{ name: string }>;
 }
 
 export default function TicTacToe() {
@@ -76,7 +87,7 @@ export default function TicTacToe() {
     const channel = supabase.channel(`room:${roomName}`);
 
     // Manejar actualizaciones del juego
-    const handleGameUpdate = (payload: any) => {
+    const handleGameUpdate = (payload: RoomUpdatePayload) => {
       setGameState({
         board: [...payload.new.board],
         nextPlayer: payload.new.next_player,
@@ -86,10 +97,10 @@ export default function TicTacToe() {
 
     // Manejar presencia de jugadores
     const handlePresenceSync = () => {
-      const presenceState = channel.presenceState();
+      const presenceState = channel.presenceState() as PresenceState;
       const users = Object.entries(presenceState).flatMap(
-        ([id, presences]: [string, any]) => 
-          presences.map((p: any) => ({ id, name: p.name }))
+        ([id, presences]) =>
+          presences.map((p) => ({ id, name: p.name }))
       );
       setUsers(users);
     };
@@ -176,28 +187,28 @@ export default function TicTacToe() {
 
   return (
     <div className="p-4 max-w-7xl mx-auto">
-               {gameState.winner && (
-                 <><Confetti
-          width={width}
-          height={height}
-          style={{ zIndex: -1 }} />
-    
-          </>
-            )}
+      {gameState.winner && (
+        <>
+          <Confetti
+            width={width}
+            height={height}
+            style={{ zIndex: -1 }}
+          />
+        </>
+      )}
 
-            {roomName && <RealtimeCursors roomName={roomName} username={currentUser || ''} />}
+      {roomName && <RealtimeCursors roomName={roomName} username={currentUser || ''} />}
 
-        <div className="text-center mb-12 mt-10">
-            <div className="flex flex-col items-center gap-6 justify-center">
-        
-              <h4 className="text-slate-600 text-xl font-semibold">
-                <div className="flex items-center space-x-2">
-                                 <h1 className="text-3xl font-bold">Tic Tac Toe</h1>
-                                 <GiTicTacToe className="text-3xl" />
-                             </div>
-              </h4>
+      <div className="text-center mb-12 mt-10">
+        <div className="flex flex-col items-center gap-6 justify-center">
+          <h4 className="text-slate-600 text-xl font-semibold">
+            <div className="flex items-center space-x-2">
+              <h1 className="text-3xl font-bold">Tic Tac Toe</h1>
+              <GiTicTacToe className="text-3xl" />
             </div>
-          </div>
+          </h4>
+        </div>
+      </div>
 
       <div className="grid grid-cols-3 gap-4">
         {/* Lista de jugadores */}
@@ -257,48 +268,44 @@ export default function TicTacToe() {
               <p className="text-green-600 font-bold">¡Ganador: {gameState.winner}!</p>
             ) : (
               <p className="text-gray-700">
-
                 Siguiente jugador: <span className="font-bold">{gameState.nextPlayer}</span>
               </p>
             )}
-        
           </div>
         </div>
       </div>
 
       {/* Botón para copiar el código de la sala */}
-  <div className="col-span-1 flex justify-center">
-  {gameState.winner ? (
-   
-  <div className="py-2 bg-purple-950 text-white rounded-lg shadow-lg flex items-center p-3 font-bold gap-2 w-fit cursor-pointer"> 
-      <button className="cursor-pointer" onClick={() => router.push('/')}>Salir</button>
-   </div>  
-  ) : (
-    <div className="py-2 bg-purple-950 text-white rounded-lg shadow-lg flex items-center p-3 font-bold gap-2 w-fit">
-      Código de la sala: {roomName}
-      <button
-        className="p-2 rounded-lg shadow-lg hover:bg-gray-100 transition duration-100"
-        onClick={() => navigator.clipboard.writeText(roomName)}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="w-5 h-5 hover:scale-110 transition duration-100"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"
-          />
-        </svg>
-      </button>
-    </div>
-  )}
-</div>
-
+      <div className="col-span-1 flex justify-center">
+        {gameState.winner ? (
+          <div className="py-2 bg-purple-950 text-white rounded-lg shadow-lg flex items-center p-3 font-bold gap-2 w-fit cursor-pointer">
+            <button className="cursor-pointer" onClick={() => router.push('/')}>Salir</button>
+          </div>
+        ) : (
+          <div className="py-2 bg-purple-950 text-white rounded-lg shadow-lg flex items-center p-3 font-bold gap-2 w-fit">
+            Código de la sala: {roomName}
+            <button
+              className="p-2 rounded-lg shadow-lg hover:bg-gray-100 transition duration-100"
+              onClick={() => navigator.clipboard.writeText(roomName)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+                className="w-5 h-5 hover:scale-110 transition duration-100"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
