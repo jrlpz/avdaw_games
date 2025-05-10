@@ -1,4 +1,4 @@
-export const classNames = (...args: any[]) => {
+export const classNames = (...args: unknown[]) => {
   const classes = args.filter(Boolean).join(' ')
   return classes
 }
