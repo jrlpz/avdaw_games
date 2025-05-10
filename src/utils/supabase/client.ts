@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { Database } from './database.types'
 
 export function createClient() {
   return createBrowserClient(
@@ -6,3 +7,5 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 }
+
+export * from './database.types'
