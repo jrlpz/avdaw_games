@@ -188,7 +188,7 @@ export default function TicTacToe() {
 
       {roomName && <RealtimeCursors roomName={roomName} username={currentUser || ''} />}
 
-      <div className="text-center mb-6 sm:mb-12 mt-4 sm:mt-10 w-full">
+      <div className="text-center mb-6 sm:mb-12 mt-4 sm:mt-4 w-full">
         <div className="flex flex-col items-center gap-4 sm:gap-6 justify-center">
           <h4 className="text-slate-600 text-xl font-semibold">
             <div className="flex items-center space-x-2">
@@ -232,7 +232,7 @@ export default function TicTacToe() {
         {/* Tablero */}
         <div className="md:col-span-1 order-3 md:order-2">
           <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto">
-            <div className="grid grid-cols-3 gap-1 sm:gap-2 mb-4 sm:mb-6">
+            <div className="grid grid-cols-3 gap-1 sm:gap-2">
               {gameState.board.map((cell, index) => (
                 <div
                   key={index}
@@ -254,7 +254,7 @@ export default function TicTacToe() {
         <div className="md:col-span-1 order-2 md:order-3">
           <div className="mb-3 sm:mb-4 text-center bg-white p-3 sm:p-4 rounded-lg shadow-md">
             {gameState.winner === 'draw' ? (
-              <p className="text-yellow-500 font-bold text-base sm:text-lg">¡Empate!</p>
+              <p className="text-yellow-600 font-bold text-base sm:text-lg">¡Empate!</p>
             ) : gameState.winner ? (
               <p className="text-green-600 font-bold text-base sm:text-lg">¡Ganador: {gameState.winner}!</p>
             ) : (
@@ -267,7 +267,7 @@ export default function TicTacToe() {
       </div>
 
       {/* Botón para copiar el código de la sala */}
-      <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mt-3 sm:mt-4 px-2 sm:px-0">
+      <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mt-3 sm:mt-4 px-2 sm:px-0 mb-2">
         <div className="flex justify-center">
           {gameState.winner ? (
             <div className="py-2 bg-purple-950 text-white rounded-lg shadow-lg flex items-center p-2 sm:p-3 font-bold gap-2 w-fit cursor-pointer">
