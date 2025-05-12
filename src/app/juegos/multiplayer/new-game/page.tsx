@@ -5,10 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation' // Import useSearchParams
 import { FormEvent, useState } from 'react'
 import {
-  uniqueNamesGenerator,
-  adjectives,
-  colors,
-  animals,
+  uniqueNamesGenerator, colors
 } from 'unique-names-generator'
 
 export default function NewGamePage() {
@@ -21,10 +18,11 @@ export default function NewGamePage() {
     event.preventDefault()
     sessionStorage.setItem('name', name)
 
+    const numberDictionary = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
     const randomName: string = uniqueNamesGenerator({
-      dictionaries: [adjectives, colors, animals],
-      separator: '-',
-      length: 3,
+      dictionaries: [colors,numberDictionary,numberDictionary,numberDictionary,numberDictionary,numberDictionary],
+      separator: '',
+      length: 6,
     })
 
     const supabase = createClient();
