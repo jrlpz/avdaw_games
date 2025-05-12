@@ -254,7 +254,7 @@ export default function TicTacToe() {
         <div className="md:col-span-1 order-2 md:order-3">
           <div className="mb-3 sm:mb-4 text-center bg-white p-3 sm:p-4 rounded-lg shadow-md">
             {gameState.winner === 'draw' ? (
-              <p className="text-yellow-600 font-bold text-base sm:text-lg">¡Empate!</p>
+              <p className="text-yellow-500 font-bold text-base sm:text-lg">¡Empate!</p>
             ) : gameState.winner ? (
               <p className="text-green-600 font-bold text-base sm:text-lg">¡Ganador: {gameState.winner}!</p>
             ) : (
