@@ -2,68 +2,93 @@
 
 import { createClient } from '@/utils/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function NewGamePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
   const [roomCode, setRoomCode] = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const name = sessionStorage.getItem('name')
-    if (name) {
-      setName(name)
+    const getSessionAndUser = async () => {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        router.push('/login')
+        return
+      }
+
+      const email = session.user.email
+      const nameFromEmail = email ? email.split('@')[0] : 'Usuario'
+      setUsername(nameFromEmail)
+      sessionStorage.setItem('name', nameFromEmail)
+      setLoading(false)
+
+      if (searchParams.has('game-id')) {
+        setRoomCode(searchParams.get('game-id') || '')
+      }
     }
 
-    if (searchParams.has('game-id')) {
-      setRoomCode(searchParams.get('game-id') || '')
-    }
-  }, [searchParams])
+    getSessionAndUser()
+  }, [router, searchParams])
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    sessionStorage.setItem('name', name)
+    
+    if (!roomCode) {
+      alert('Por favor ingresa un código de sala')
+      return
+    }
 
-    const supabase = createClient();
+    const supabase = createClient()
     const insertResult = await supabase.from('results').insert([
       {
         room_name: roomCode,
-        name: name,
+        name: username,
         result: 0,
       },
     ])
 
     if (insertResult.error) {
       console.error(insertResult.error)
+      alert('Error al unirse a la sala. Verifica el código e intenta nuevamente.')
       return
     }
 
     router.push(`/juegos/multiplayer/${roomCode}`)
   }
-  console.log('join game page');
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Cargando...</p>
+      </div>
+    )
+  }
+
   return (
     <form
       className="flex flex-col items-center justify-center mt-8 space-y-4"
       onSubmit={handleSubmit}
     >
+      <div className="px-8 py-4 bg-gray-200 text-black rounded-lg shadow-lg w-full text-center">
+        Jugando como: <strong>{username}</strong>
+      </div>
       <input
-        className="px-8 py-4 bg-white text-black rounded-lg shadow-lg"
-        placeholder=" Nombre"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
-      <input
-        className="px-8 py-4 bg-white text-black rounded-lg shadow-lg"
-        placeholder="Codigo de la sala"
+        className="px-8 py-4 bg-white text-black rounded-lg shadow-lg w-full"
+        placeholder="Código de la sala"
         value={roomCode}
         onChange={(e) => setRoomCode(e.target.value)}
+        required
       />
       <button
-        className="mt-4 l px-8 py-4 bg-blue-500 text-white rounded-lg shadow-lg"
+        className="mt-4 px-8 py-4 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition-colors"
         type="submit"
       >
-       Unirse
+        Unirse a la partida
       </button>
     </form>
   )

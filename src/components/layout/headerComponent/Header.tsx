@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { FaBars, FaSearch, FaUserCircle } from "react-icons/fa";
+import { FaBars, FaSearch, FaUserCircle, FaTimes } from "react-icons/fa"; // Importa FaTimes
 import { GrGamepad } from "react-icons/gr";
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './Header.module.css';
- import { logoutAction } from './action'; 
+import { logoutAction } from './action';
 
 interface UserData {
   email: string;
@@ -19,8 +19,8 @@ const Header = ({ userData }: { userData: UserData | null }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
- 
-  const pathname = usePathname(); 
+
+  const pathname = usePathname();
   const isLoginPage = pathname === '/login';
 
   const handleHomeClick = () => {
@@ -37,11 +37,14 @@ const Header = ({ userData }: { userData: UserData | null }) => {
 
   const handleLogout = async () => {
     try {
-       await logoutAction();
+      await logoutAction();
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
+  const handlePerfil = () => {
+    router.push('/perfil');
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,15 +60,15 @@ const Header = ({ userData }: { userData: UserData | null }) => {
   return (
     <header className="bg-[var(--color-header)] px-6 py-3 flex items-center justify-between flex-wrap">
       <div className="flex items-center gap-4">
-     
+
         <button
           onClick={handleHomeClick}
           aria-label="Inicio"
         >
           <GrGamepad className="text-[var(--color-mando)] text-2xl cursor-pointer" />
-       
+
         </button>
-   
+
         <FaBars
           className="text-white text-xl cursor-pointer lg:hidden"
           aria-label="Menú"
@@ -74,7 +77,10 @@ const Header = ({ userData }: { userData: UserData | null }) => {
 
         {/* Menú móvil */}
         <div className={`${styles['mobile-menu']} ${isMenuOpen ? styles.open : ''} lg:hidden`}>
-          <div className="py-2 text-sm text-gray-200">
+          <div className="relative py-2 text-sm text-gray-200"> {/* Agregado relative */}
+            <button className="absolute top-2 right-2 text-white cursor-pointer" onClick={closeMenu} aria-label="Cerrar menú">
+              <FaTimes className="text-xl" />
+            </button>
             <h3 className="px-4 py-2 font-bold text-white">Un Jugador</h3>
             <ul>
               <li>
@@ -88,7 +94,7 @@ const Header = ({ userData }: { userData: UserData | null }) => {
                 </Link>
               </li>
             </ul>
-            
+
             <h3 className="px-4 py-2 font-bold text-white mt-2">Multijugador</h3>
             <ul>
               <li>
@@ -103,12 +109,14 @@ const Header = ({ userData }: { userData: UserData | null }) => {
                 </Link>
               </li>
             </ul>
-            
-            <li>
-              <Link href="/chat" className="block px-4 py-2 hover:bg-gray-600 hover:text-white mt-2" onClick={closeMenu}>
-                Chat
-              </Link>
-            </li>
+            <h3 className="px-4 py-2 font-bold text-white mt-2">Social</h3>
+            <ul>
+              <li>
+                <Link href="/chat" className="block px-4 py-2 hover:bg-gray-600 hover:text-white mt-2" onClick={closeMenu}>
+                  Chat
+                </Link>
+              </li>
+            </ul>
           </div>
         </div>
 
@@ -129,7 +137,7 @@ const Header = ({ userData }: { userData: UserData | null }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="relative group">
             <button className="text-white hover:text-gray-400 flex items-center">
               Multijugador
@@ -145,7 +153,7 @@ const Header = ({ userData }: { userData: UserData | null }) => {
               </div>
             </div>
           </div>
-          
+
           <Link href="/chat" className="text-white hover:text-gray-400">Chat</Link>
         </div>
       </div>
@@ -175,53 +183,54 @@ const Header = ({ userData }: { userData: UserData | null }) => {
 
       <div className="flex items-center space-x-2">
         {userData ? (
-        
+
           <>
             <small className="text-gray-400">
-              ¡Hola, { userData.email}! 
+              ¡Hola, {userData.username}!
             </small>
-            <small>
-            <button
-              className="text-[var(--color-mando)] font-bold underline cursor-pointer"
-              onClick={handleLogout}
-              aria-label="Cerrar sesión"
-            >
-              Cerrar sesión
-            </button>
-            </small>
+         
             <div className="relative group">
-              <button className="flex items-center">
-                 <FaUserCircle className="text-gray-400 text-3xl cursor-pointer" />
+              <button className="flex items-center" onClick={handlePerfil}>
+                <FaUserCircle className="text-gray-400 text-3xl cursor-pointer" />
               </button>
               <div className="absolute hidden group-hover:block bg-gray-800 right-0 mt-1 min-w-[150px] rounded-md shadow-lg z-20 p-2">
-                 {userData.email && <p className="text-xs text-gray-400 px-2 pb-2 truncate">{userData.email}</p>}
-                 <button
-                   className="w-full text-left text-[var(--color-mando)] font-bold px-2 py-1 hover:bg-gray-700 rounded text-sm"
-                   onClick={handleLogout}
-                   aria-label="Cerrar sesión"
-                 >
-                   Cerrar sesión
-                 </button>
+                {userData.email && <p className="text-xs text-gray-400 px-2 pb-2 truncate">{userData.email}</p>}
+                <button
+                  className="w-full text-left text-[var(--color-mando)] font-bold px-2 py-1 hover:bg-gray-700 rounded text-sm"
+                  onClick={handleLogout}
+                  aria-label="Cerrar sesión"
+                >
+                  Cerrar sesión
+                </button>
               </div>
             </div>
+               <small>
+              <button
+                className="text-[var(--color-mando)] font-bold underline cursor-pointer"
+                onClick={handleLogout}
+                aria-label="Cerrar sesión"
+              >
+                Cerrar sesión
+              </button>
+            </small>
           </>
         ) : (
-        
+
           isLoginPage ? (
-         
+
             <div
               className="flex items-center space-x-2 cursor-pointer text-gray-400 hover:text-white"
-              onClick={handleRegistroClick} 
+              onClick={handleRegistroClick}
               aria-label="Registrarse"
             >
               <small>Registrarse</small>
-              <FaUserCircle className="text-3xl" /> 
+              <FaUserCircle className="text-3xl" />
             </div>
           ) : (
             // Si NO estamos en /login, muestra "Entrar"
             <div
-              className="flex items-center space-x-2 cursor-pointer text-gray-400 hover:text-white" 
-              onClick={handleLoginClick} 
+              className="flex items-center space-x-2 cursor-pointer text-gray-400 hover:text-white"
+              onClick={handleLoginClick}
               aria-label="Iniciar sesión"
             >
               <small>Entrar</small>

@@ -4,8 +4,8 @@ import { useFormStatus } from 'react-dom';
 import { useActionState, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { login } from './actions'; // Assuming actions.ts is in the same directory
-import type { LoginState } from '@/app/auth/definitions'; // Adjust path if needed
+import { login } from './actions';
+import type { LoginState } from '@/app/auth/definitions';
 
 const initialState: LoginState = { message: undefined, errors: {}, success: false, redirectTo: undefined };
 
@@ -69,7 +69,7 @@ export default function Login() {
           </div>
       )}
 
-      <form action={formAction}>
+      <form className="mx-auto lg:w-[400px]" action={formAction}>
         <div className="grid sm:grid-cols-1 gap-6">
           <div>
             <label className="text-slate-800 text-sm font-medium mb-2 block">Email</label>

@@ -11,6 +11,7 @@ export interface Database {
     Tables: {
       results: {
         Row: {
+          id: string
           created_at: string
           name: string
           ready: boolean | null

@@ -10,7 +10,7 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center mt-8">
       {router.has('error') && router.get('error') === 'game-not-found' && (
         <div className="px-8 pb-8 text-red-500 rounded-lg shadow-lg">
-          Game not found. Create a new game or join an existing game.
+         No hay partidas en curso, crea o unete a una.
         </div>
       )}
 

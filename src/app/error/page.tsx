@@ -1,5 +1,5 @@
 'use client'
 
 export default function ErrorPage() {
-  return <p>Sorry, something went wrong</p>
+  return <div><p>Algo ha ido mal</p><button></button></div>
 }

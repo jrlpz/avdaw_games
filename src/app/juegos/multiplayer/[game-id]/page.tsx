@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/utils/supabase/client';
-
+import { FaTimes, FaRegCircle } from "react-icons/fa";
 import { REALTIME_LISTEN_TYPES, REALTIME_POSTGRES_CHANGES_LISTEN_EVENT } from '@supabase/supabase-js';
 import { GiTicTacToe } from 'react-icons/gi';
 
@@ -40,7 +40,8 @@ export default function TicTacToe() {
   const [users, setUsers] = useState<Player[]>([]);
   const [initialLoad, setInitialLoad] = useState(false);
   const { width, height } = useWindowSize();
-
+  const [gameReady, setGameReady] = useState(false);
+  const [playerSymbol, setPlayerSymbol] = useState<'X' | 'O' | null>(null);
   const router = useRouter()
 
   useEffect(() => {
@@ -48,37 +49,44 @@ export default function TicTacToe() {
     setCurrentUser(name);
   }, []);
 
+    useEffect(() => {
+        if (!roomName || !currentUser) return;
+
+        const fetchInitialState = async () => {
+            const supabase = createClient();
+            const { data, error } = await supabase
+                .from('rooms')
+                .select('board, next_player, winner')
+                .eq('room_name', roomName)
+                .single();
+
+            if (error) {
+                console.error('Error al cargar estado inicial:', error);
+                router.push('/');
+                return;
+            }
+
+            if (data) {
+                setGameState({
+                    board: data.board,
+                    nextPlayer: data.next_player,
+                    winner: data.winner,
+                });
+                setInitialLoad(true);
+
+                // After fetching the room data, check if the user is already assigned a symbol in localStorage
+                const storedSymbol = localStorage.getItem(`${roomName}-${currentUser}-symbol`);
+                if (storedSymbol) {
+                    setPlayerSymbol(storedSymbol as 'X' | 'O');
+                }
+            }
+        };
+
+        fetchInitialState();
+    }, [roomName, router, currentUser]);
+
   useEffect(() => {
-    if (!roomName || initialLoad) return;
-
-    const fetchInitialState = async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('rooms')
-        .select('board, next_player, winner')
-        .eq('room_name', roomName)
-        .single();
-
-      if (error) {
-        console.error('Error al cargar estado inicial:', error);
-        return;
-      }
-
-      if (data) {
-        setGameState({
-          board: data.board,
-          nextPlayer: data.next_player,
-          winner: data.winner,
-        });
-        setInitialLoad(true);
-      }
-    };
-
-    fetchInitialState();
-  }, [roomName, initialLoad]);
-
-  useEffect(() => {
-    if (!roomName || !currentUser || !initialLoad) return;
+    if (!roomName || !currentUser) return;
 
     const supabase = createClient();
     const channel = supabase.channel(`room:${roomName}`);
@@ -125,7 +133,35 @@ export default function TicTacToe() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [roomName, currentUser, initialLoad]);
+  }, [roomName, currentUser]);
+
+
+  useEffect(() => {
+        // Assign player symbol based on join order. This useEffect runs *after* the one that sets `users`.
+        if (users.length > 0 && currentUser) {
+            const currentPlayer = users.find(user => user.name === currentUser);
+            if (currentPlayer) {
+                const playerIndex = users.findIndex(user => user.id === currentPlayer.id);
+                const assignedSymbol = playerIndex === 0 ? 'X' : 'O';
+
+                // Store the assigned symbol in localStorage
+                localStorage.setItem(`${roomName}-${currentUser}-symbol`, assignedSymbol);
+                setPlayerSymbol(assignedSymbol);
+            } else {
+                // Handle the case where the current user isn't found in the users array.
+                console.warn("Current user not found in the users array.");
+                setPlayerSymbol(null); // Or some default.
+            }
+        } else {
+            setPlayerSymbol(null);
+        }
+    }, [users, currentUser, roomName]);
+
+
+  useEffect(() => {
+    setGameReady(users.length === 2);
+  }, [users]);
+
 
   const checkWinner = useCallback((board: number[]): string | null => {
     const lines = [
@@ -149,14 +185,16 @@ export default function TicTacToe() {
       !currentUser ||
       gameState.board[index] !== 0 ||
       gameState.winner ||
-      currentUser !== gameState.nextPlayer
+      currentUser !== gameState.nextPlayer ||
+      !gameReady
     ) return;
 
     const playerIndex = users.findIndex(u => u.name === currentUser);
     if (playerIndex === -1) return;
 
     const newBoard = [...gameState.board];
-    newBoard[index] = playerIndex + 1;
+    //newBoard[index] = playerIndex + 1;
+    newBoard[index] = (playerSymbol === 'X') ? 1 : 2;
 
     const newWinner = checkWinner(newBoard);
     const newNextPlayer = users.find(u => u.name !== currentUser)?.name || null;
@@ -175,6 +213,16 @@ export default function TicTacToe() {
   };
 
   const isCurrentTurn = currentUser === gameState.nextPlayer && !gameState.winner;
+  const displayValue = (cell: number) => {
+    if (cell === 1) return 'X';
+    if (cell === 2) return 'O';
+    return '';
+  };
+
+  // Prevent initial render flash of incorrect state by waiting for initial load.
+  if (!initialLoad) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="px-2 sm:px-4 max-w-7xl mx-auto flex flex-col items-center w-full">
@@ -210,10 +258,12 @@ export default function TicTacToe() {
                   key={user.id}
                   className="flex items-center p-2 bg-slate-600 rounded shadow-sm"
                 >
-                  <span
-                    className={`inline-block w-5 h-5 sm:w-6 sm:h-6 mr-2 rounded-full 
-                  ${index === 0 ? 'bg-blue-500' : 'bg-red-500'}`}
-                  ></span>
+                  {/* Replace circle with icons */}
+                  {index === 0 ? (
+                    <FaTimes className="mr-2 text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />
+                  ) : (
+                    <FaRegCircle className="mr-2 text-red-500 w-5 h-5 sm:w-6 sm:h-6" />
+                  )}
                   <span className="font-medium text-sm sm:text-base">
                     {user.name}
                     {user.name === currentUser && (
@@ -227,6 +277,14 @@ export default function TicTacToe() {
               ))}
             </ul>
           </div>
+          {/* Display a message when waiting for another player */}
+          {!gameReady && (
+            <div className="text-center mt-4">
+              <p className="text-yellow-500 font-bold">
+                Esperando a otro jugador para comenzar...
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Tablero */}
@@ -240,10 +298,10 @@ export default function TicTacToe() {
                   className={`aspect-square flex items-center justify-center text-2xl sm:text-3xl md:text-4xl font-bold rounded-lg transition-colors
                     ${cell === 1 ? 'bg-blue-100 text-blue-600' :
                       cell === 2 ? 'bg-red-100 text-red-600' :
-                      isCurrentTurn ? 'bg-gray-200 hover:bg-gray-300 cursor-pointer' : 'bg-gray-200'}
-                    ${isCurrentTurn && cell === 0 ? 'ring-1 sm:ring-2 ring-gray-300' : ''}`}
+                      isCurrentTurn && gameReady ? 'bg-gray-200 hover:bg-gray-300 cursor-pointer' : 'bg-gray-200 cursor-not-allowed'}
+                    ${isCurrentTurn && cell === 0 && gameReady ? 'ring-1 sm:ring-2 ring-gray-300' : ''}`}
                 >
-                  {cell === 1 ? 'X' : cell === 2 ? 'O' : ''}
+                  {displayValue(cell)}
                 </div>
               ))}
             </div>
@@ -259,7 +317,7 @@ export default function TicTacToe() {
               <p className="text-green-600 font-bold text-base sm:text-lg">¡Ganador: {gameState.winner}!</p>
             ) : (
               <p className="text-gray-700 text-base sm:text-lg">
-                Siguiente jugador: <span className="font-bold">{gameState.nextPlayer}</span>
+                {gameReady ? `Siguiente jugador: ${gameState.nextPlayer}` : "Esperando jugadores..."}
               </p>
             )}
           </div>

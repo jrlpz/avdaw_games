@@ -28,9 +28,9 @@ export async function decrypt(session: string | undefined = '') {
   }
 }
 
-export async function createSession(userId: string,email: string) {
+export async function createSession(userId: string, email: string, username: string) {
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-  const session = await encrypt({ userId, email, expiresAt });
+  const session = await encrypt({ userId, email, username, expiresAt });
 
   (await cookies()).set('session', session, {
     httpOnly: true,
@@ -39,7 +39,9 @@ export async function createSession(userId: string,email: string) {
     sameSite: 'lax',
     path: '/',
   });
+  
 }
+
 
 export async function verifySession() {
   const cookie = (await cookies()).get('session')?.value;
@@ -114,6 +116,6 @@ export async function getCurrentSession() {
     isAuth: true,
     userId: session.userId,
     email: emailFromDb || session.email || '',
-    username: usernameFromDb || 'Usuario' 
+    username: usernameFromDb ||  session.username || '' 
   };
 }

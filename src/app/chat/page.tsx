@@ -1,26 +1,25 @@
 // app/chat/page.tsx
-import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import ChatClient from './chatclient';
 import Image from 'next/image';
+import { getCurrentSession } from '@/app/auth/session'; 
+
 
 export default async function ChatPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  
+  const session = await getCurrentSession(); 
 
-  if (!user) {
+  if (!session?.isAuth) {
+    console.log("No hay sesión activa, redirigiendo a /login");
     return redirect('/login');
   }
 
-  // Obtener el nombre de usuario del perfil
-  const { data: profile } = await supabase
-    .from('usuarios')
-    .select('username')
-    .eq('id', user.id)
-    .single();
+  console.log(session)
 
-  const username = profile?.username || user.email?.split('@')[0] || "Usuario";
+  // const username = session.username || session.email;
 
+//  const username = session.email ? session.email.split('@')[0] : "Usuario";
+ const username = session.username ? session.username : session.email.split('@')[0];
   return (
     <>
       <div className="text-center mb-2 mt-2">
