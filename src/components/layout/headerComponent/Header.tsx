@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './Header.module.css';
 import { logoutAction } from './action';
+import { CurrentUserAvatar } from '@/components/current-user-avatar'
 
 interface UserData {
   email: string;
@@ -158,29 +159,6 @@ const Header = ({ userData }: { userData: UserData | null }) => {
         </div>
       </div>
 
-
-      {/*
-       //! PENDIENTE barra de búsqueda
-      // <div className="relative hidden lg:block">
-        <form onSubmit={handleSearch}>
-          <input
-            type="text"
-            placeholder="¿A qué jugamos hoy?"
-            className="bg-gray-700 text-gray-400 text-sm px-4 py-2 rounded-full w-64 focus:outline-none"
-            aria-label="Buscar juegos"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button type="submit" className="absolute right-3 top-2">
-            <FaSearch
-              className="text-gray-400 text-sm"
-              aria-hidden="true"
-            />
-          </button>
-        </form>
-      </div> 
-      */}
-
       <div className="flex items-center space-x-2">
         {userData ? (
 
@@ -191,8 +169,10 @@ const Header = ({ userData }: { userData: UserData | null }) => {
          
             <div className="relative group">
               <button className="flex items-center" onClick={handlePerfil}>
-                <FaUserCircle className="text-gray-400 text-3xl cursor-pointer" />
+                            <div className="text-gray-400  cursor-pointer" ><CurrentUserAvatar /></div>
               </button>
+
+              
               <div className="absolute hidden group-hover:block bg-gray-800 right-0 mt-1 min-w-[150px] rounded-md shadow-lg z-20 p-2">
                 {userData.email && <p className="text-xs text-gray-400 px-2 pb-2 truncate">{userData.email}</p>}
                 <button
@@ -204,6 +184,8 @@ const Header = ({ userData }: { userData: UserData | null }) => {
                 </button>
               </div>
             </div>
+
+
                <small>
               <button
                 className="text-[var(--color-mando)] font-bold underline cursor-pointer"
@@ -213,6 +195,8 @@ const Header = ({ userData }: { userData: UserData | null }) => {
                 Cerrar sesión
               </button>
             </small>
+
+
           </>
         ) : (
 

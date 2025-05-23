@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { AiOutlineClose } from "react-icons/ai";
 import { guardarDatos, actualizarContraseña, } from './actions';
-
+import { CurrentProfileAvatar } from '@/components/current-profile-avatar'
+      import Image from 'next/image';
 import { ProfileFormSchema } from '@/app/auth/definitions';
 
 interface UserData {
@@ -172,18 +173,23 @@ if (formData.password !== formData.repassword) {
         {/* Tarjeta de Perfil */}
         <div className="rounded-2xl shadow-lg dark:bg-navy-800 mt-10 bg-white">
           <div className="relative flex flex-col items-center pt-16 pb-6 px-4">
-            <img
-              src='https://horizon-tailwind-react-git-tailwind-components-horizon-ui.vercel.app/static/media/banner.ef572d78f29b0fee0a09.png'
-              className="rounded-t-2xl absolute top-0 h-32 w-full object-cover"
-              alt="Banner del usuario"
-            />
-            <div className="absolute -top-12 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-pink-400 dark:border-navy-700">
-              <img
-                className="h-full w-full rounded-full object-cover"
-                src='https://horizon-tailwind-react-git-tailwind-components-horizon-ui.vercel.app/static/media/avatar11.1060b63041fdffa5f8ef.png'
-                alt="Avatar"
-              />
-            </div>
+           
+      
+                       
+                        <Image
+                          src='/images/banner.png'
+                          className="rounded-t-2xl absolute top-0 h-32 w-full object-cover"
+                          alt="Banner del usuario"
+                          width={500} // Ajusta estos valores según tus necesidades
+                          height={200}
+                        />
+
+
+
+      <div className="absolute -top-12 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-pink-100 dark:border-navy-700">
+ <CurrentProfileAvatar className="h-full w-full rounded-full object-cover" />
+
+</div>
 
             <div className="text-center z-0">
               <h4 className="text-xl font-bold">

@@ -7,6 +7,7 @@ import { FaTimes, FaRegCircle } from "react-icons/fa";
 import { REALTIME_LISTEN_TYPES, REALTIME_POSTGRES_CHANGES_LISTEN_EVENT } from '@supabase/supabase-js';
 import { GiTicTacToe } from 'react-icons/gi';
 
+import { CurrentUserAvatar } from '@/components/current-user-avatar'
 import { RealtimeCursors } from '@/components/realtime-cursors'
 import Confetti from 'react-confetti'
 import { useWindowSize } from 'react-use';
@@ -49,41 +50,41 @@ export default function TicTacToe() {
     setCurrentUser(name);
   }, []);
 
-    useEffect(() => {
-        if (!roomName || !currentUser) return;
+  useEffect(() => {
+    if (!roomName || !currentUser) return;
 
-        const fetchInitialState = async () => {
-            const supabase = createClient();
-            const { data, error } = await supabase
-                .from('rooms')
-                .select('board, next_player, winner')
-                .eq('room_name', roomName)
-                .single();
+    const fetchInitialState = async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('board, next_player, winner')
+        .eq('room_name', roomName)
+        .single();
 
-            if (error) {
-                console.error('Error al cargar estado inicial:', error);
-                router.push('/');
-                return;
-            }
+      if (error) {
+        console.error('Error al cargar estado inicial:', error);
+        router.push('/');
+        return;
+      }
 
-            if (data) {
-                setGameState({
-                    board: data.board,
-                    nextPlayer: data.next_player,
-                    winner: data.winner,
-                });
-                setInitialLoad(true);
+      if (data) {
+        setGameState({
+          board: data.board,
+          nextPlayer: data.next_player,
+          winner: data.winner,
+        });
+        setInitialLoad(true);
 
-                // After fetching the room data, check if the user is already assigned a symbol in localStorage
-                const storedSymbol = localStorage.getItem(`${roomName}-${currentUser}-symbol`);
-                if (storedSymbol) {
-                    setPlayerSymbol(storedSymbol as 'X' | 'O');
-                }
-            }
-        };
+        // After fetching the room data, check if the user is already assigned a symbol in localStorage
+        const storedSymbol = localStorage.getItem(`${roomName}-${currentUser}-symbol`);
+        if (storedSymbol) {
+          setPlayerSymbol(storedSymbol as 'X' | 'O');
+        }
+      }
+    };
 
-        fetchInitialState();
-    }, [roomName, router, currentUser]);
+    fetchInitialState();
+  }, [roomName, router, currentUser]);
 
   useEffect(() => {
     if (!roomName || !currentUser) return;
@@ -137,25 +138,25 @@ export default function TicTacToe() {
 
 
   useEffect(() => {
-        // Assign player symbol based on join order. This useEffect runs *after* the one that sets `users`.
-        if (users.length > 0 && currentUser) {
-            const currentPlayer = users.find(user => user.name === currentUser);
-            if (currentPlayer) {
-                const playerIndex = users.findIndex(user => user.id === currentPlayer.id);
-                const assignedSymbol = playerIndex === 0 ? 'X' : 'O';
+    // Assign player symbol based on join order. This useEffect runs *after* the one that sets `users`.
+    if (users.length > 0 && currentUser) {
+      const currentPlayer = users.find(user => user.name === currentUser);
+      if (currentPlayer) {
+        const playerIndex = users.findIndex(user => user.id === currentPlayer.id);
+        const assignedSymbol = playerIndex === 0 ? 'X' : 'O';
 
-                // Store the assigned symbol in localStorage
-                localStorage.setItem(`${roomName}-${currentUser}-symbol`, assignedSymbol);
-                setPlayerSymbol(assignedSymbol);
-            } else {
-                // Handle the case where the current user isn't found in the users array.
-                console.warn("Current user not found in the users array.");
-                setPlayerSymbol(null); // Or some default.
-            }
-        } else {
-            setPlayerSymbol(null);
-        }
-    }, [users, currentUser, roomName]);
+        // Store the assigned symbol in localStorage
+        localStorage.setItem(`${roomName}-${currentUser}-symbol`, assignedSymbol);
+        setPlayerSymbol(assignedSymbol);
+      } else {
+        // Handle the case where the current user isn't found in the users array.
+        console.warn("Current user not found in the users array.");
+        setPlayerSymbol(null); // Or some default.
+      }
+    } else {
+      setPlayerSymbol(null);
+    }
+  }, [users, currentUser, roomName]);
 
 
   useEffect(() => {
@@ -252,15 +253,20 @@ export default function TicTacToe() {
         <div className="md:col-span-1 order-1">
           <div className="bg-purple-950 text-white p-3 sm:p-4 rounded-lg">
             <h3 className="font-bold mb-2">Jugadores conectados:</h3>
-            <ul className="space-y-2">
+            <div className="flex flex-col gap-4">
+
+
+              {/* Mostrar información de símbolos y nombres */}
               {users.map((user, index) => (
-                <li
+                <div
                   key={user.id}
                   className="flex items-center p-2 bg-slate-600 rounded shadow-sm"
+
                 >
-                  {/* Replace circle with icons */}
+
                   {index === 0 ? (
                     <FaTimes className="mr-2 text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />
+
                   ) : (
                     <FaRegCircle className="mr-2 text-red-500 w-5 h-5 sm:w-6 sm:h-6" />
                   )}
@@ -271,11 +277,11 @@ export default function TicTacToe() {
                     )}
                   </span>
                   <span className="ml-auto text-gray-500 text-sm sm:text-base">
-                    {index === 0 ? 'X' : 'O'}
+                    <CurrentUserAvatar />
                   </span>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
           {/* Display a message when waiting for another player */}
           {!gameReady && (
@@ -286,7 +292,6 @@ export default function TicTacToe() {
             </div>
           )}
         </div>
-
         {/* Tablero */}
         <div className="md:col-span-1 order-3 md:order-2">
           <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto">
@@ -298,7 +303,7 @@ export default function TicTacToe() {
                   className={`aspect-square flex items-center justify-center text-2xl sm:text-3xl md:text-4xl font-bold rounded-lg transition-colors
                     ${cell === 1 ? 'bg-blue-100 text-blue-600' :
                       cell === 2 ? 'bg-red-100 text-red-600' :
-                      isCurrentTurn && gameReady ? 'bg-gray-200 hover:bg-gray-300 cursor-pointer' : 'bg-gray-200 cursor-not-allowed'}
+                        isCurrentTurn && gameReady ? 'bg-gray-200 hover:bg-gray-300 cursor-pointer' : 'bg-gray-200 cursor-not-allowed'}
                     ${isCurrentTurn && cell === 0 && gameReady ? 'ring-1 sm:ring-2 ring-gray-300' : ''}`}
                 >
                   {displayValue(cell)}
@@ -309,19 +314,24 @@ export default function TicTacToe() {
         </div>
 
         {/* Estado del juego */}
-        <div className="md:col-span-1 order-2 md:order-3">
-          <div className="mb-3 sm:mb-4 text-center bg-white p-3 sm:p-4 rounded-lg shadow-md">
-            {gameState.winner === 'draw' ? (
-              <p className="text-yellow-600 font-bold text-base sm:text-lg">¡Empate!</p>
-            ) : gameState.winner ? (
-              <p className="text-green-600 font-bold text-base sm:text-lg">¡Ganador: {gameState.winner}!</p>
-            ) : (
-              <p className="text-gray-700 text-base sm:text-lg">
-                {gameReady ? `Siguiente jugador: ${gameState.nextPlayer}` : "Esperando jugadores..."}
-              </p>
-            )}
-          </div>
-        </div>
+      {/* Estado del juego */}
+<div className="md:col-span-1 order-2 md:order-3">
+  <div className="mb-3 sm:mb-4 text-center bg-white p-3 sm:p-4 rounded-lg shadow-md">
+    {gameState.winner === 'draw' ? (
+      <p className="text-yellow-600 font-bold text-base sm:text-lg">¡Empate!</p>
+    ) : gameState.winner ? (
+      <p className="text-green-600 font-bold text-base sm:text-lg">¡Ganador: {gameState.winner}!</p>
+    ) : gameReady ? (
+    <div className="flex items-center justify-center gap-2 text-gray-700 text-base sm:text-lg">
+  <span>Siguiente jugador: {gameState.nextPlayer}</span>
+  <CurrentUserAvatar />
+</div>
+    ) : (
+      <p className="text-gray-700 text-base sm:text-lg">Esperando jugadores...</p>
+    )}
+  </div>
+</div>
+
       </div>
 
       {/* Botón para copiar el código de la sala */}

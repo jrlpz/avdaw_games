@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import './math.globals.css'
+
 
 export const metadata: Metadata = {
   title: 'Tic Tac Toe - Avdaw Games',

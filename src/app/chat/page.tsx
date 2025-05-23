@@ -16,10 +16,8 @@ export default async function ChatPage() {
 
   console.log(session)
 
-  // const username = session.username || session.email;
 
-//  const username = session.email ? session.email.split('@')[0] : "Usuario";
- const username = session.username ? session.username : session.email.split('@')[0];
+ const username = session.username ? session.username : session.email;
   return (
     <>
       <div className="text-center mb-2 mt-2">
