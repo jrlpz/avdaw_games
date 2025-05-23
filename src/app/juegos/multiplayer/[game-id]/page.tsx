@@ -42,7 +42,6 @@ export default function TicTacToe() {
   const [initialLoad, setInitialLoad] = useState(false);
   const { width, height } = useWindowSize();
   const [gameReady, setGameReady] = useState(false);
-  const [playerSymbol, setPlayerSymbol] = useState<'X' | 'O' | null>(null);
   const router = useRouter()
 
   useEffect(() => {
@@ -74,12 +73,6 @@ export default function TicTacToe() {
           winner: data.winner,
         });
         setInitialLoad(true);
-
-        // After fetching the room data, check if the user is already assigned a symbol in localStorage
-        const storedSymbol = localStorage.getItem(`${roomName}-${currentUser}-symbol`);
-        if (storedSymbol) {
-          setPlayerSymbol(storedSymbol as 'X' | 'O');
-        }
       }
     };
 
@@ -136,33 +129,18 @@ export default function TicTacToe() {
     };
   }, [roomName, currentUser]);
 
-
-  useEffect(() => {
-    // Assign player symbol based on join order. This useEffect runs *after* the one that sets `users`.
-    if (users.length > 0 && currentUser) {
-      const currentPlayer = users.find(user => user.name === currentUser);
-      if (currentPlayer) {
-        const playerIndex = users.findIndex(user => user.id === currentPlayer.id);
-        const assignedSymbol = playerIndex === 0 ? 'X' : 'O';
-
-        // Store the assigned symbol in localStorage
-        localStorage.setItem(`${roomName}-${currentUser}-symbol`, assignedSymbol);
-        setPlayerSymbol(assignedSymbol);
-      } else {
-        // Handle the case where the current user isn't found in the users array.
-        console.warn("Current user not found in the users array.");
-        setPlayerSymbol(null); // Or some default.
-      }
-    } else {
-      setPlayerSymbol(null);
-    }
-  }, [users, currentUser, roomName]);
-
-
   useEffect(() => {
     setGameReady(users.length === 2);
-  }, [users]);
-
+    
+    // Asignar nextPlayer si no está definido y hay 2 jugadores
+    if (users.length === 2 && !gameState.nextPlayer) {
+      const supabase = createClient();
+      supabase
+        .from('rooms')
+        .update({ next_player: users[0].name })
+        .eq('room_name', roomName);
+    }
+  }, [users, gameState.nextPlayer, roomName]);
 
   const checkWinner = useCallback((board: number[]): string | null => {
     const lines = [
@@ -173,6 +151,7 @@ export default function TicTacToe() {
 
     for (const [a, b, c] of lines) {
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        // board[a] será 1 o 2 (índice del jugador + 1)
         return users[board[a] - 1]?.name || null;
       }
     }
@@ -194,8 +173,7 @@ export default function TicTacToe() {
     if (playerIndex === -1) return;
 
     const newBoard = [...gameState.board];
-    //newBoard[index] = playerIndex + 1;
-    newBoard[index] = (playerSymbol === 'X') ? 1 : 2;
+    newBoard[index] = playerIndex + 1; // 1 para primer jugador, 2 para segundo
 
     const newWinner = checkWinner(newBoard);
     const newNextPlayer = users.find(u => u.name !== currentUser)?.name || null;
@@ -214,13 +192,13 @@ export default function TicTacToe() {
   };
 
   const isCurrentTurn = currentUser === gameState.nextPlayer && !gameState.winner;
+  
   const displayValue = (cell: number) => {
-    if (cell === 1) return 'X';
-    if (cell === 2) return 'O';
-    return '';
+    if (cell === 1) return <FaTimes className="text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />;
+    if (cell === 2) return <FaRegCircle className="text-red-500 w-5 h-5 sm:w-6 sm:h-6" />;
+    return null;
   };
 
-  // Prevent initial render flash of incorrect state by waiting for initial load.
   if (!initialLoad) {
     return <div>Loading...</div>;
   }
@@ -251,22 +229,20 @@ export default function TicTacToe() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 w-full px-2 sm:px-0">
         {/* Lista de jugadores */}
         <div className="md:col-span-1 order-1">
-          <div className="bg-purple-950 text-white p-3 sm:p-4 rounded-lg">
+          <div className="bg-purple-950 text-white p-3 sm:p-4 rounded-t-lg">
             <h3 className="font-bold mb-2">Jugadores conectados:</h3>
             <div className="flex flex-col gap-4">
-
-
-              {/* Mostrar información de símbolos y nombres */}
               {users.map((user, index) => (
                 <div
                   key={user.id}
-                  className="flex items-center p-2 bg-slate-600 rounded shadow-sm"
-
+                  className={`flex items-center p-2 rounded shadow-sm ${
+                    user.name === gameState.nextPlayer && !gameState.winner
+                      ? 'ring-2 ring-yellow-400 bg-slate-700'
+                      : 'bg-slate-600'
+                  }`}
                 >
-
                   {index === 0 ? (
                     <FaTimes className="mr-2 text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />
-
                   ) : (
                     <FaRegCircle className="mr-2 text-red-500 w-5 h-5 sm:w-6 sm:h-6" />
                   )}
@@ -283,7 +259,7 @@ export default function TicTacToe() {
               ))}
             </div>
           </div>
-          {/* Display a message when waiting for another player */}
+          
           {!gameReady && (
             <div className="text-center mt-4">
               <p className="text-yellow-500 font-bold">
@@ -291,7 +267,25 @@ export default function TicTacToe() {
               </p>
             </div>
           )}
+                  {/* Estado del juego */}
+
+          <div className="mb-3 sm:mb-4 text-center bg-white p-3 sm:p-4 rounded-lg shadow-md">
+            {gameState.winner === 'draw' ? (
+              <p className="text-yellow-600 font-bold text-base sm:text-lg">¡Empate!</p>
+            ) : gameState.winner ? (
+              <p className="text-green-600 font-bold text-base sm:text-lg">¡Ganador: {gameState.winner}!</p>
+            ) : gameReady ? (
+              <div className="flex items-center justify-center gap-2 text-gray-700 text-base sm:text-lg">
+                <span>Siguiente jugador: {gameState.nextPlayer}</span>
+                <CurrentUserAvatar />
+              </div>
+            ) : (
+              <p className="text-gray-700 text-base sm:text-lg">Esperando jugadores...</p>
+            )}
+          </div>
+    
         </div>
+        
         {/* Tablero */}
         <div className="md:col-span-1 order-3 md:order-2">
           <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto">
@@ -301,8 +295,8 @@ export default function TicTacToe() {
                   key={index}
                   onClick={() => handleCellClick(index)}
                   className={`aspect-square flex items-center justify-center text-2xl sm:text-3xl md:text-4xl font-bold rounded-lg transition-colors
-                    ${cell === 1 ? 'bg-blue-100 text-blue-600' :
-                      cell === 2 ? 'bg-red-100 text-red-600' :
+                    ${cell === 1 ? 'bg-blue-100' :
+                      cell === 2 ? 'bg-red-100' :
                         isCurrentTurn && gameReady ? 'bg-gray-200 hover:bg-gray-300 cursor-pointer' : 'bg-gray-200 cursor-not-allowed'}
                     ${isCurrentTurn && cell === 0 && gameReady ? 'ring-1 sm:ring-2 ring-gray-300' : ''}`}
                 >
@@ -313,24 +307,6 @@ export default function TicTacToe() {
           </div>
         </div>
 
-        {/* Estado del juego */}
-      {/* Estado del juego */}
-<div className="md:col-span-1 order-2 md:order-3">
-  <div className="mb-3 sm:mb-4 text-center bg-white p-3 sm:p-4 rounded-lg shadow-md">
-    {gameState.winner === 'draw' ? (
-      <p className="text-yellow-600 font-bold text-base sm:text-lg">¡Empate!</p>
-    ) : gameState.winner ? (
-      <p className="text-green-600 font-bold text-base sm:text-lg">¡Ganador: {gameState.winner}!</p>
-    ) : gameReady ? (
-    <div className="flex items-center justify-center gap-2 text-gray-700 text-base sm:text-lg">
-  <span>Siguiente jugador: {gameState.nextPlayer}</span>
-  <CurrentUserAvatar />
-</div>
-    ) : (
-      <p className="text-gray-700 text-base sm:text-lg">Esperando jugadores...</p>
-    )}
-  </div>
-</div>
 
       </div>
 

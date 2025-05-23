@@ -39,7 +39,8 @@ const useThrottleCallback = <Params extends unknown[], Return>(
 
 const supabase = createClient()
 
-const generateRandomColor = () => `hsl(${Math.floor(Math.random() * 360)}, 100%, 70%)`
+// const generateRandomColor = () => `hsl(${Math.floor(Math.random() * 360)}, 100%, 70%)`
+const generateRandomColor = () => `hsl(${Math.floor(Math.random() * 360)}, 100%, ${Math.floor(Math.random() * 50) + 20}%)`;
 
 const generateRandomNumber = () => Math.floor(Math.random() * 100)
 

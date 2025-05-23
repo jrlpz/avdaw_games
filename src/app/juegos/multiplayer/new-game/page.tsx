@@ -1,6 +1,6 @@
 // new game/NewGamePage.tsx
 'use client'
-import './math_globals.css'
+
 import { createClient } from '@/utils/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect } from 'react'
