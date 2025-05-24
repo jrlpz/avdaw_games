@@ -23,9 +23,23 @@ export default function NewGamePage() {
         return
       }
 
-      const email = session.user.email
-      const username = email ? email.split('@')[0] : 'Usuario'
-      sessionStorage.setItem('name', username)
+      // Obtener el usuario de la tabla usuarios usando el email
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('username')
+        .eq('email', session.user.email)
+        .single()
+
+      if (userError || !userData) {
+        console.error('Error al obtener usuario:', userError)
+        // Si falla, usar la parte antes del @ del email como fallback
+        const email = session.user.email
+        const username = email ? email.split('@')[0] : 'Usuario'
+        sessionStorage.setItem('name', username)
+      } else {
+        // Usar el username de la tabla usuarios
+        sessionStorage.setItem('name', userData.username)
+      }
 
       const numberDictionary = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
       const randomName: string = uniqueNamesGenerator({
@@ -48,7 +62,7 @@ export default function NewGamePage() {
 
       if (gameType === 'tictactoe') {
         insertData.board = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-        insertData.next_player = username
+        insertData.next_player = sessionStorage.getItem('name') || 'Usuario'
         insertData.winner = null
       }
 
@@ -67,7 +81,7 @@ export default function NewGamePage() {
         .from('results')
         .insert([{
           room_name: newGame.data.room_name || '',
-          name: username,
+          name: sessionStorage.getItem('name') || 'Usuario',
           result: 0,
         }])
 

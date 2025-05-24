@@ -21,10 +21,26 @@ export default function NewGamePage() {
         return
       }
 
-      const email = session.user.email
-      const nameFromEmail = email ? email.split('@')[0] : 'Usuario'
-      setUsername(nameFromEmail)
-      sessionStorage.setItem('name', nameFromEmail)
+      // Obtener el usuario de la tabla usuarios usando el email
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('username')
+        .eq('email', session.user.email)
+        .single()
+
+      if (userError || !userData) {
+        console.error('Error al obtener usuario:', userError)
+        // Si falla, usar la parte antes del @ del email como fallback
+        const email = session.user.email
+        const nameFromEmail = email ? email.split('@')[0] : 'Usuario'
+        setUsername(nameFromEmail)
+        sessionStorage.setItem('name', nameFromEmail)
+      } else {
+        // Usar el username de la tabla usuarios
+        setUsername(userData.username)
+        sessionStorage.setItem('name', userData.username)
+      }
+
       setLoading(false)
 
       if (searchParams.has('game-id')) {

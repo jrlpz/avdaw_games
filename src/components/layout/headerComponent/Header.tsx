@@ -162,42 +162,50 @@ const Header = ({ userData }: { userData: UserData | null }) => {
       <div className="flex items-center space-x-2">
         {userData ? (
 
-          <>
-            <small className="text-gray-400">
-              ¡Hola, {userData.username}!
-            </small>
-         
-            <div className="relative group">
-              <button className="flex items-center" onClick={handlePerfil}>
-                            <div className="text-gray-400  cursor-pointer" ><CurrentUserAvatar /></div>
-              </button>
+<>
+  <div className="relative group inline-block cursor-pointer">
+    {/* Contenedor principal con nombre y avatar */}
+    <div className="flex items-center gap-2 px-2 py-2 cursor-pointer relative">
+      <small className="text-[var(--color-mando)]">¡Hola, {userData.username}!</small>
+      <button
+        className="flex items-center cursor-pointer relative"
+        onClick={handlePerfil}
+      >
+        <div className="text-gray-400">
+          <CurrentUserAvatar />
+        </div>
 
-              
-              <div className="absolute hidden group-hover:block bg-gray-800 right-0 mt-1 min-w-[150px] rounded-md shadow-lg z-20 p-2">
-                {userData.email && <p className="text-xs text-gray-400 px-2 pb-2 truncate">{userData.email}</p>}
-                <button
-                  className="w-full text-left text-[var(--color-mando)] font-bold px-2 py-1 hover:bg-gray-700 rounded text-sm"
-                  onClick={handleLogout}
-                  aria-label="Cerrar sesión"
-                >
-                  Cerrar sesión
-                </button>
-              </div>
-            </div>
+        {/* Tooltip a la izquierda del avatar */}
+        <span className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 text-xs text-white bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap z-10">
+          Ir a perfil
+        </span>
+      </button>
+    </div>
 
+    {/* Menú desplegable de cerrar sesión */}
+    <div className="absolute hidden group-hover:block bg-gray-800 right-0 min-w-[150px] rounded-md shadow-lg z-20 p-2">
+      <button
+        className="w-full text-center text-[var(--color-mando)] font-bold px-2 py-1 hover:bg-gray-700 rounded text-sm"
+        onClick={handleLogout}
+        aria-label="Cerrar sesión"
+      >
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
 
-               <small>
-              <button
-                className="text-[var(--color-mando)] font-bold underline cursor-pointer"
-                onClick={handleLogout}
-                aria-label="Cerrar sesión"
-              >
-                Cerrar sesión
-              </button>
-            </small>
+  {/* Botón visible solo en pantallas pequeñas */}
+  <small className="block md:hidden">
+    <button
+      className="text-[var(--color-mando)] font-bold underline cursor-pointer"
+      onClick={handleLogout}
+      aria-label="Cerrar sesión"
+    >
+      Cerrar sesión
+    </button>
+  </small>
+</>
 
-
-          </>
         ) : (
 
           isLoginPage ? (

@@ -1,9 +1,9 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AiOutlineClose } from "react-icons/ai";
-import { guardarDatos, actualizarContraseña, } from './actions';
-import { CurrentProfileAvatar } from '@/components/current-profile-avatar'
-      import Image from 'next/image';
+import { guardarDatos, actualizarContraseña, uploadAvatar, deletePreviousAvatar } from './actions';
+import { CurrentProfileAvatar } from '@/components/current-profile-avatar';
+import Image from 'next/image';
 import { ProfileFormSchema } from '@/app/auth/definitions';
 
 interface UserData {
@@ -11,7 +11,7 @@ interface UserData {
   email: string;
   created_at: string;
   descripcion: string;
-  avatar: string;
+  avatar: string | null;
   favorito: string;
   victorias: number;
   empates: number;
@@ -19,9 +19,6 @@ interface UserData {
 }
 
 export default function ChatClient({ userData: initialUserData }: { userData: UserData }) {
-
-
-
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(initialUserData);
   const [formErrors, setFormErrors] = useState<{
@@ -41,6 +38,9 @@ export default function ChatClient({ userData: initialUserData }: { userData: Us
     repassword: ""
   });
 
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const currentDate = new Date();
   const formattedDate = `${currentDate.getDate()}/${currentDate.getMonth() + 1}/${currentDate.getFullYear()}`;
   const [isDirty, setIsDirty] = useState(false);
@@ -64,7 +64,6 @@ export default function ChatClient({ userData: initialUserData }: { userData: Us
       [name]: value
     }));
 
-
     if (formErrors[name as keyof typeof formErrors]) {
       setFormErrors(prev => {
         const newErrors = { ...prev };
@@ -74,127 +73,205 @@ export default function ChatClient({ userData: initialUserData }: { userData: Us
     }
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  setIsUploading(true);
+  setFormErrors({});
 
   try {
-    const validationData = {
-      username: formData.username,
-      descripcion: formData.descripcion,
-      favorito: formData.favorito,
-      password: formData.password || undefined,
-      repassword: formData.repassword || undefined
-    };
+    // Verificación básica del archivo
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Solo se permiten imágenes (JPEG, PNG, GIF)');
+    }
 
-    const result = ProfileFormSchema.safeParse(validationData);
+    if (file.size > 2 * 1024 * 1024) {
+      throw new Error('La imagen no puede exceder 2MB');
+    }
+
+    // Subir el archivo
+    const result = await uploadAvatar(userData.email, file);
+
+    interface UploadResult {
+      success: boolean;
+      error?: string;
+    }
 
     if (!result.success) {
-      const formattedErrors = Object.fromEntries(
-        Object.entries(result.error.flatten().fieldErrors)
-          .map(([key, value]) => [key, value ? value[0] : undefined])
-      );
-
-      setFormErrors({
-        ...formattedErrors,
-        password: formattedErrors.password ? [formattedErrors.password] : undefined,
-        repassword: formattedErrors.repassword ? [formattedErrors.repassword] : undefined
-      });
-
-      return;
+      throw new Error((result as UploadResult).error || 'Error al guardar el avatar');
     }
 
- // 🚫 Verificar que las contraseñas coincidan
-if (formData.password !== formData.repassword) {
-  const passwordError: string[] = [];
-  const repasswordError: string[] = [];
+    // Actualizar estado
+    setUserData(prev => ({
+      ...prev,
+      avatar: result.avatarUrl
+    }));
 
-  if (formData.password && !formData.repassword) {
-    repasswordError.push("Debes repetir la contraseña.");
-  } else if (!formData.password && formData.repassword) {
-    passwordError.push("Debes introducir la contraseña original.");
-  } else {
-    passwordError.push("Las contraseñas no coinciden.");
-    repasswordError.push("Las contraseñas no coinciden.");
-  }
-
-  setFormErrors(prev => ({
-    ...prev,
-    ...(passwordError.length > 0 && { password: passwordError }),
-    ...(repasswordError.length > 0 && { repassword: repasswordError }),
-  }));
-
-  return;
-}
-
-    const updatedData = await guardarDatos(
-      initialUserData.email,
-      formData.username,
-      formData.descripcion,
-      formData.favorito
-    );
-
-    if (formData.password) {
-      const passwordUpdate = await actualizarContraseña(initialUserData.email, formData.password);
-    }
-
-    setUserData({
-      ...userData,
-      username: formData.username,
-      descripcion: formData.descripcion,
-      favorito: formData.favorito,
-    });
-
-    setIsEditing(false);
-    setFormErrors({});
-    setSuccessMessage("Datos guardados correctamente.");
-    setTimeout(() => {
-      setSuccessMessage(null);
-    }, 2000);
-
+    setSuccessMessage('Avatar actualizado correctamente');
+    
   } catch (error) {
-    let errorMessage = "Ocurrió un error al guardar. Por favor, inténtalo de nuevo.";
-    if (error instanceof Error) {
-      if (error.message.includes('password')) {
-        errorMessage = "La contraseña debe ser diferente a la actual.";
-      } else {
-        errorMessage = `Error: ${error.message}`;
-      }
-    }
-    setFormErrors({ message: errorMessage });
+    setFormErrors({
+      message: error instanceof Error ? 
+        error.message : 
+        'Error inesperado al subir avatar'
+    });
+  } finally {
+    setIsUploading(false);
   }
 };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
+    try {
+      const validationData = {
+        username: formData.username,
+        descripcion: formData.descripcion,
+        favorito: formData.favorito,
+        password: formData.password || undefined,
+        repassword: formData.repassword || undefined
+      };
+
+      const result = ProfileFormSchema.safeParse(validationData);
+
+      if (!result.success) {
+        const formattedErrors = Object.fromEntries(
+          Object.entries(result.error.flatten().fieldErrors)
+            .map(([key, value]) => [key, value ? value[0] : undefined])
+        );
+
+        setFormErrors({
+          ...formattedErrors,
+          password: formattedErrors.password ? [formattedErrors.password] : undefined,
+          repassword: formattedErrors.repassword ? [formattedErrors.repassword] : undefined
+        });
+
+        return;
+      }
+
+      if (formData.password !== formData.repassword) {
+        const passwordError: string[] = [];
+        const repasswordError: string[] = [];
+
+        if (formData.password && !formData.repassword) {
+          repasswordError.push("Debes repetir la contraseña.");
+        } else if (!formData.password && formData.repassword) {
+          passwordError.push("Debes introducir la contraseña original.");
+        } else {
+          passwordError.push("Las contraseñas no coinciden.");
+          repasswordError.push("Las contraseñas no coinciden.");
+        }
+
+        setFormErrors(prev => ({
+          ...prev,
+          ...(passwordError.length > 0 && { password: passwordError }),
+          ...(repasswordError.length > 0 && { repassword: repasswordError }),
+        }));
+
+        return;
+      }
+
+      const updatedData = await guardarDatos(
+        initialUserData.email,
+        formData.username,
+        formData.descripcion,
+        formData.favorito
+      );
+
+      if (formData.password) {
+        await actualizarContraseña(initialUserData.email, formData.password);
+      }
+
+      setUserData({
+        ...userData,
+        username: formData.username,
+        descripcion: formData.descripcion,
+        favorito: formData.favorito,
+      });
+
+      setIsEditing(false);
+      setFormErrors({});
+      setSuccessMessage("Datos guardados correctamente.");
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 2000);
+
+    } catch (error) {
+      let errorMessage = "Ocurrió un error al guardar. Por favor, inténtalo de nuevo.";
+      if (error instanceof Error) {
+        if (error.message.includes('password')) {
+          errorMessage = "La contraseña debe ser diferente a la actual.";
+        } else {
+          errorMessage = `Error: ${error.message}`;
+        }
+      }
+      setFormErrors({ message: errorMessage });
+    }
+  };
 
   return (
     <div className="flex h-full flex-col md:flex-row justify-center gap-3 p-2 md:p-4">
+      {/* Input oculto para seleccionar archivos */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
 
       {/* Columna izquierda - Perfil y Lista de Amigos */}
       <div className="w-full md:w-1/3 lg:w-1/4 flex flex-col gap-4">
         {/* Tarjeta de Perfil */}
         <div className="rounded-2xl shadow-lg dark:bg-navy-800 mt-10 bg-white">
           <div className="relative flex flex-col items-center pt-16 pb-6 px-4">
-           
-      
-                       
-                        <Image
-                          src='/images/banner.png'
-                          className="rounded-t-2xl absolute top-0 h-32 w-full object-cover"
-                          alt="Banner del usuario"
-                          width={500} // Ajusta estos valores según tus necesidades
-                          height={200}
-                        />
+            <Image
+              src='/images/banner.png'
+              className="rounded-t-2xl absolute top-0 h-32 w-full object-cover"
+              alt="Banner del usuario"
+              width={500}
+              height={200}
+            />
 
-
-
-      <div className="absolute -top-12 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-pink-100 dark:border-navy-700">
- <CurrentProfileAvatar className="h-full w-full rounded-full object-cover" />
-
-</div>
+            <div 
+              className="absolute -top-12 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-pink-100 dark:border-navy-700 cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={handleAvatarClick}
+              title="Cambiar avatar"
+            >
+              {isUploading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
+                </div>
+              ) : null}
+              
+              {avatarPreview ? (
+                <img 
+                  src={avatarPreview} 
+                  className="h-full w-full rounded-full object-cover" 
+                  alt="Avatar preview"
+                />
+              ) : userData.avatar ? (
+                <img 
+                  src={userData.avatar} 
+                  className="h-full w-full rounded-full object-cover" 
+                  alt="Avatar del usuario"
+                />
+              ) : (
+                <CurrentProfileAvatar className="h-full w-full rounded-full object-cover" />
+              )}
+            </div>
 
             <div className="text-center z-0">
               <h4 className="text-xl font-bold">
                 {userData.username}
               </h4>
+              
               <p className="text-gray-800 font-bold">
                 Miembro desde el <span>{formattedDate}</span>
               </p>
@@ -248,7 +325,6 @@ if (formData.password !== formData.repassword) {
                       className="transition-transform duration-200 group-hover:scale-[1.5]"
                     />
                   </button>
-
                 </div>
               </div>
             ))}
@@ -257,12 +333,10 @@ if (formData.password !== formData.repassword) {
             Añadir amigo
           </button>
         </div>
-
       </div>
 
       {/* Columna derecha - Formulario de perfil */}
       <div className="w-full mt-10 md:w-[70%] lg:w-[60%] xl:w-[60%] rounded-2xl overflow-hidden shadow-lg bg-white dark:bg-navy-800 p-4 md:p-6 relative">
-
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-navy-700 dark:text-white">Datos de perfil</h2>
           {!isEditing ? (
@@ -296,14 +370,14 @@ if (formData.password !== formData.repassword) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
             <input
               type="text"
-              name="username" // ← NECESARIO
-              className={`w-full px-3 py-2 border border-gray-300 dark:border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white`}
+              name="username"
+              className={`w-full px-3 py-2 border ${formErrors.username ? 'border-red-500' : 'border-gray-300 dark:border-navy-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white`}
               value={formData.username}
-              onChange={handleInputChange} // ← ESTO FALTABA
+              onChange={handleInputChange}
               disabled={!isEditing}
             />
             {formErrors.username && (
-              <p className="mt-1 text-sm text-red-600">{formErrors.username[0]}</p>
+              <p className="mt-1 text-sm text-red-600">{formErrors.username}</p>
             )}
           </div>
 
@@ -311,10 +385,10 @@ if (formData.password !== formData.repassword) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
             <input
               type="email"
-              className={`w-full px-3 py-2 border border-gray-300 dark:border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white ${isEditing ? 'bg-gray-200 dark:bg-navy-500' : ''}`}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white bg-gray-100 dark:bg-navy-600"
               value={userData.email}
               readOnly
-              disabled={!isEditing}
+              disabled
             />
           </div>
 
@@ -323,7 +397,7 @@ if (formData.password !== formData.repassword) {
             <input
               type="password"
               name="password"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white"
+              className={`w-full px-3 py-2 border ${formErrors.password ? 'border-red-500' : 'border-gray-300 dark:border-navy-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white`}
               placeholder="••••••••"
               value={formData.password}
               onChange={handleInputChange}
@@ -342,7 +416,7 @@ if (formData.password !== formData.repassword) {
             <input
               type="password"
               name="repassword"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white"
+              className={`w-full px-3 py-2 border ${formErrors.repassword ? 'border-red-500' : 'border-gray-300 dark:border-navy-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white`}
               placeholder="••••••••"
               value={formData.repassword}
               onChange={handleInputChange}
@@ -360,7 +434,7 @@ if (formData.password !== formData.repassword) {
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Juego favorito</label>
             <select
               name="favorito"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white"
+              className={`w-full px-3 py-2 border ${formErrors.favorito ? 'border-red-500' : 'border-gray-300 dark:border-navy-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white`}
               value={formData.favorito}
               onChange={handleInputChange}
               disabled={!isEditing}
@@ -369,6 +443,11 @@ if (formData.password !== formData.repassword) {
               <option value="tictactoe">TicTacToe</option>
               <option value="words">Words</option>
             </select>
+            {formErrors.favorito && (
+              <p className="mt-1 text-sm text-red-600">
+                {formErrors.favorito[0]}
+              </p>
+            )}
           </div>
 
           {isEditing && (
@@ -401,8 +480,6 @@ if (formData.password !== formData.repassword) {
               {successMessage}
             </div>
           )}
-
-
         </form>
       </div>
     </div>

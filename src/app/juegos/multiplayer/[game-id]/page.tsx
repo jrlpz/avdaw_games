@@ -7,7 +7,7 @@ import { FaTimes, FaRegCircle } from "react-icons/fa";
 import { REALTIME_LISTEN_TYPES, REALTIME_POSTGRES_CHANGES_LISTEN_EVENT } from '@supabase/supabase-js';
 import { GiTicTacToe } from 'react-icons/gi';
 
-import { CurrentUserAvatar } from '@/components/current-user-avatar'
+// import { CurrentUserAvatar } from '@/components/current-user-avatar'
 import { RealtimeCursors } from '@/components/realtime-cursors'
 import Confetti from 'react-confetti'
 import { useWindowSize } from 'react-use';
@@ -253,7 +253,7 @@ export default function TicTacToe() {
                     )}
                   </span>
                   <span className="ml-auto text-gray-500 text-sm sm:text-base">
-                    <CurrentUserAvatar />
+                    PLACHOLDER 1
                   </span>
                 </div>
               ))}
@@ -277,7 +277,7 @@ export default function TicTacToe() {
             ) : gameReady ? (
               <div className="flex items-center justify-center gap-2 text-gray-700 text-base sm:text-lg">
                 <span>Siguiente jugador: {gameState.nextPlayer}</span>
-                <CurrentUserAvatar />
+               PLACEHOLDER 2
               </div>
             ) : (
               <p className="text-gray-700 text-base sm:text-lg">Esperando jugadores...</p>

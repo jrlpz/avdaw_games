@@ -26,7 +26,6 @@ export async function recuperarUsuario(email: string, username: string) {
 }
 
 
-
 export async function calcularEstadisticas(name: string) {
     const supabase = await createClient();  // Crear cliente dentro de la función
     try {
@@ -135,5 +134,122 @@ export async function actualizarContraseña(email: string, password: string) {
   } catch (error) {
     console.error('Error detallado en actualizarContraseña:', error);
     throw new Error(`Error al actualizar contraseña: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+/**
+ * Sube un avatar a Supabase Storage y actualiza la referencia en la tabla de usuarios
+ */
+
+export async function uploadAvatar(email: string, file: File) {
+  const supabase = await createClient();
+  
+  try {
+    // 1. Validaciones del archivo
+    const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    
+    if (!fileExt || !validExtensions.includes(fileExt)) {
+      throw new Error('Formato no válido. Use JPG, PNG, GIF o WEBP');
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      throw new Error('La imagen no puede ser mayor a 2MB');
+    }
+
+    // 2. Generar nombre único para el archivo
+    const timestamp = Date.now();
+    const safeEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
+    const fileName = `avatar-${safeEmail}-${timestamp}.${fileExt}`;
+    const filePath = `avatars/${safeEmail}/${fileName}`;
+
+    // 3. Subir el archivo a Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('avatars')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type
+      });
+
+    if (uploadError) throw uploadError;
+
+    // 4. Obtener URL pública
+    const { data: publicUrlData } = supabase
+      .storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    // 5. Actualizar referencia en la tabla de usuarios
+    const { data: userData, error: userError } = await supabase
+      .from('usuarios')
+      .update({ 
+        avatar: publicUrlData.publicUrl,
+        avatar_path: filePath
+      })
+      .eq('email', email)
+      .select()
+      .single();
+
+    if (userError) throw userError;
+
+    // 6. Actualizar sesión
+    const session = await getCurrentSession();
+    if (session) {
+      await supabase.auth.updateUser({
+        data: { avatar_url: publicUrlData.publicUrl }
+      });
+    }
+
+    return {
+      success: true,
+      avatarUrl: publicUrlData.publicUrl,
+      avatarPath: filePath
+    };
+
+  } catch (error) {
+    console.error('Error en uploadAvatar:', {
+      error,
+      email,
+      fileName: file.name
+    });
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al subir avatar',
+      avatarUrl: null
+    };
+  }
+}
+/**
+ * Elimina un avatar anterior si existe
+ */
+export async function deletePreviousAvatar(avatarPath: string) {
+  if (!avatarPath) return { success: true };
+
+  const supabase = await createClient();
+  
+  try {
+    // Extraer el path relativo
+    const relativePath = avatarPath.startsWith('avatars/') 
+      ? avatarPath 
+      : avatarPath.split('/avatars/')[1] || avatarPath;
+
+    const { error } = await supabase
+      .storage
+      .from('avatars')
+      .remove([relativePath]);
+
+    return { 
+      success: !error,
+      error: error?.message 
+    };
+  } catch (error) {
+    console.error('Error al eliminar avatar anterior:', error);
+    return { 
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido' 
+    };
   }
 }

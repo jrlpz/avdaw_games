@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Juego multijugador de Tres en Raya',
 }
 
-export default function MathLayout({
+export default function TicTacToeLayout({
   children,
 }: {
   children: React.ReactNode
