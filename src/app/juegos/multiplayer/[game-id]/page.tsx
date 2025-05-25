@@ -6,15 +6,14 @@ import { createClient } from '@/utils/supabase/client';
 import { FaTimes, FaRegCircle } from "react-icons/fa";
 import { REALTIME_LISTEN_TYPES, REALTIME_POSTGRES_CHANGES_LISTEN_EVENT } from '@supabase/supabase-js';
 import { GiTicTacToe } from 'react-icons/gi';
-
-// import { CurrentUserAvatar } from '@/components/current-user-avatar'
-import { RealtimeCursors } from '@/components/realtime-cursors'
-import Confetti from 'react-confetti'
+import { RealtimeCursors } from '@/components/realtime-cursors';
+import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 
 interface Player {
   id: string;
   name: string;
+  avatar?: string;
 }
 
 interface RoomUpdatePayload {
@@ -42,7 +41,8 @@ export default function TicTacToe() {
   const [initialLoad, setInitialLoad] = useState(false);
   const { width, height } = useWindowSize();
   const [gameReady, setGameReady] = useState(false);
-  const router = useRouter()
+  const [playerSymbol, setPlayerSymbol] = useState<'X' | 'O' | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const name = sessionStorage.getItem('name');
@@ -56,7 +56,7 @@ export default function TicTacToe() {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('rooms')
-        .select('board, next_player, winner')
+        .select('board, next_player, winner, player1, player1_avatar, player2, player2_avatar')
         .eq('room_name', roomName)
         .single();
 
@@ -73,6 +73,20 @@ export default function TicTacToe() {
           winner: data.winner,
         });
         setInitialLoad(true);
+
+        // Set initial players with avatars
+        const players = [];
+        if (data.player1) players.push({ 
+          id: 'player1', 
+          name: data.player1,
+          avatar: data.player1_avatar 
+        });
+        if (data.player2) players.push({ 
+          id: 'player2', 
+          name: data.player2,
+          avatar: data.player2_avatar 
+        });
+        setUsers(players);
       }
     };
 
@@ -93,13 +107,24 @@ export default function TicTacToe() {
       });
     };
 
-    const handlePresenceSync = () => {
+    const handlePresenceSync = async () => {
       const presenceState = channel.presenceState() as PresenceState;
-      const users = Object.entries(presenceState).flatMap(
-        ([id, presences]) =>
-          presences.map((p) => ({ id, name: p.name }))
+      const currentUsers = Object.entries(presenceState).flatMap(
+        ([id, presences]) => presences.map((p) => ({ id, name: p.name }))
       );
-      setUsers(users);
+
+      // Get updated avatars
+      const { data: roomData } = await supabase
+        .from('rooms')
+        .select('player1, player1_avatar, player2, player2_avatar')
+        .eq('room_name', roomName)
+        .single();
+
+      setUsers(currentUsers.map(user => ({
+        ...user,
+        avatar: user.name === roomData?.player1 ? roomData?.player1_avatar : 
+               user.name === roomData?.player2 ? roomData?.player2_avatar : undefined
+      })));
     };
 
     channel
@@ -130,9 +155,21 @@ export default function TicTacToe() {
   }, [roomName, currentUser]);
 
   useEffect(() => {
+    // Assign player symbol based on join order
+    if (users.length > 0 && currentUser) {
+      const currentPlayer = users.find(user => user.name === currentUser);
+      if (currentPlayer) {
+        const playerIndex = users.findIndex(user => user.id === currentPlayer.id);
+        const assignedSymbol = playerIndex === 0 ? 'X' : 'O';
+        setPlayerSymbol(assignedSymbol);
+      }
+    }
+  }, [users, currentUser]);
+
+  useEffect(() => {
     setGameReady(users.length === 2);
     
-    // Asignar nextPlayer si no está definido y hay 2 jugadores
+    // Set first player if not set
     if (users.length === 2 && !gameState.nextPlayer) {
       const supabase = createClient();
       supabase
@@ -151,7 +188,6 @@ export default function TicTacToe() {
 
     for (const [a, b, c] of lines) {
       if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-        // board[a] será 1 o 2 (índice del jugador + 1)
         return users[board[a] - 1]?.name || null;
       }
     }
@@ -166,20 +202,20 @@ export default function TicTacToe() {
       gameState.board[index] !== 0 ||
       gameState.winner ||
       currentUser !== gameState.nextPlayer ||
-      !gameReady
+      !gameReady ||
+      !playerSymbol
     ) return;
 
-    const playerIndex = users.findIndex(u => u.name === currentUser);
-    if (playerIndex === -1) return;
-
     const newBoard = [...gameState.board];
-    newBoard[index] = playerIndex + 1; // 1 para primer jugador, 2 para segundo
+    newBoard[index] = playerSymbol === 'X' ? 1 : 2;
 
     const newWinner = checkWinner(newBoard);
     const newNextPlayer = users.find(u => u.name !== currentUser)?.name || null;
 
     const supabase = createClient();
-    const { error } = await supabase
+    
+    // Update game state
+    const { error: gameError } = await supabase
       .from('rooms')
       .update({
         board: newBoard,
@@ -188,7 +224,45 @@ export default function TicTacToe() {
       })
       .eq('room_name', roomName);
 
-    if (error) console.error('Error al actualizar el juego:', error);
+    if (gameError) {
+      console.error('Error al actualizar el juego:', gameError);
+      return;
+    }
+
+    // Update results if there's a winner
+    if (newWinner) {
+      try {
+        // Find existing results
+        const { data: existingResults, error: fetchError } = await supabase
+          .from('results')
+          .select('id, name')
+          .eq('room_name', roomName);
+
+        if (fetchError) throw fetchError;
+
+        // Prepare data for upsert
+        const updates = users.map(user => {
+          const existing = existingResults?.find(r => r.name === user.name);
+          return {
+            ...(existing && { id: existing.id }),
+            room_name: roomName,
+            name: user.name,
+            result: newWinner === 'draw' ? 0 : 
+                   newWinner === user.name ? 1 : -1
+          };
+        });
+
+        // Perform upsert
+        const { error: resultsError } = await supabase
+          .from('results')
+          .upsert(updates);
+
+        if (resultsError) throw resultsError;
+        
+      } catch (error) {
+        console.error('Error al actualizar resultados:', error);
+      }
+    }
   };
 
   const isCurrentTurn = currentUser === gameState.nextPlayer && !gameState.winner;
@@ -200,7 +274,7 @@ export default function TicTacToe() {
   };
 
   if (!initialLoad) {
-    return <div>Loading...</div>;
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
   return (
@@ -227,9 +301,9 @@ export default function TicTacToe() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 w-full px-2 sm:px-0">
-        {/* Lista de jugadores */}
+        {/* Player list */}
         <div className="md:col-span-1 order-1">
-          <div className="bg-purple-950 text-white p-3 sm:p-4 rounded-t-lg">
+          <div className="bg-purple-950 text-white p-3 sm:p-4 rounded-lg">
             <h3 className="font-bold mb-2">Jugadores conectados:</h3>
             <div className="flex flex-col gap-4">
               {users.map((user, index) => (
@@ -241,19 +315,34 @@ export default function TicTacToe() {
                       : 'bg-slate-600'
                   }`}
                 >
+                  {/* Player avatar */}
+                  {user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={`Avatar de ${user.name}`}
+                      className="w-8 h-8 rounded-full mr-2 border-2 border-white"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-400 mr-2 flex items-center justify-center text-white font-bold">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  
                   {index === 0 ? (
                     <FaTimes className="mr-2 text-blue-500 w-5 h-5 sm:w-6 sm:h-6" />
                   ) : (
                     <FaRegCircle className="mr-2 text-red-500 w-5 h-5 sm:w-6 sm:h-6" />
                   )}
+                  
                   <span className="font-medium text-sm sm:text-base">
                     {user.name}
                     {user.name === currentUser && (
                       <span className="ml-1 text-white">(tú)</span>
                     )}
                   </span>
+                  
                   <span className="ml-auto text-gray-500 text-sm sm:text-base">
-                    PLACHOLDER 1
+                    {index === 0 ? 'X' : 'O'}
                   </span>
                 </div>
               ))}
@@ -267,26 +356,9 @@ export default function TicTacToe() {
               </p>
             </div>
           )}
-                  {/* Estado del juego */}
-
-          <div className="mb-3 sm:mb-4 text-center bg-white p-3 sm:p-4 rounded-lg shadow-md">
-            {gameState.winner === 'draw' ? (
-              <p className="text-yellow-600 font-bold text-base sm:text-lg">¡Empate!</p>
-            ) : gameState.winner ? (
-              <p className="text-green-600 font-bold text-base sm:text-lg">¡Ganador: {gameState.winner}!</p>
-            ) : gameReady ? (
-              <div className="flex items-center justify-center gap-2 text-gray-700 text-base sm:text-lg">
-                <span>Siguiente jugador: {gameState.nextPlayer}</span>
-               PLACEHOLDER 2
-              </div>
-            ) : (
-              <p className="text-gray-700 text-base sm:text-lg">Esperando jugadores...</p>
-            )}
-          </div>
-    
         </div>
-        
-        {/* Tablero */}
+
+        {/* Game board */}
         <div className="md:col-span-1 order-3 md:order-2">
           <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto">
             <div className="grid grid-cols-3 gap-1 sm:gap-2">
@@ -307,10 +379,46 @@ export default function TicTacToe() {
           </div>
         </div>
 
+        {/* Game status */}
+        <div className="md:col-span-1 order-2 md:order-3">
+          <div className="mb-3 sm:mb-4 text-center bg-white p-3 sm:p-4 rounded-lg shadow-md">
+            {gameState.winner === 'draw' ? (
+              <p className="text-yellow-600 font-bold text-base sm:text-lg">¡Empate!</p>
+            ) : gameState.winner ? (
+              <p className="text-green-600 font-bold text-base sm:text-lg">¡Ganador: {gameState.winner}!</p>
+            ) : gameReady ? (
+             <div className="flex items-center justify-center gap-2 text-gray-700 text-base sm:text-lg">
+  {(() => {
+    const nextPlayer = users.find(user => user.name === gameState.nextPlayer);
+    return (
+      <>
+        {nextPlayer?.avatar ? (
+          <img
+            src={nextPlayer.avatar}
+            alt={`Avatar de ${nextPlayer.name}`}
+            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-gray-300"
+          />
+        ) : (
+          <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-400 flex items-center justify-center text-white text-sm font-bold">
+            {nextPlayer?.name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <span>Siguiente jugador: {gameState.nextPlayer}</span>
+      </>
+    );
+  })()}
+</div>
+
+            ) : (
+              <p className="text-gray-700 text-base sm:text-lg">Esperando jugadores...</p>
+            )}
+          </div>
+        </div>
+
 
       </div>
 
-      {/* Botón para copiar el código de la sala */}
+      {/* Room code */}
       <div className="w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mt-3 sm:mt-4 px-2 sm:px-0 mb-2">
         <div className="flex justify-center">
           {gameState.winner ? (

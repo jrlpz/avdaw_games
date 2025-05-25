@@ -1,4 +1,3 @@
-// new game/NewGamePage.tsx
 'use client'
 
 import { createClient } from '@/utils/supabase/client'
@@ -15,82 +14,96 @@ export default function NewGamePage() {
 
   useEffect(() => {
     const createAndRedirectToGame = async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session) {
-        router.push('/login')
-        return
-      }
+      try {
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!session) {
+          router.push('/login')
+          return
+        }
 
-      // Obtener el usuario de la tabla usuarios usando el email
-      const { data: userData, error: userError } = await supabase
-        .from('usuarios')
-        .select('username')
-        .eq('email', session.user.email)
-        .single()
+        // Obtener el usuario de la tabla usuarios usando el email
+        const { data: userData, error: userError } = await supabase
+          .from('usuarios')
+          .select('username, avatar')
+          .eq('email', session.user.email)
+          .single()
 
-      if (userError || !userData) {
-        console.error('Error al obtener usuario:', userError)
-        // Si falla, usar la parte antes del @ del email como fallback
-        const email = session.user.email
-        const username = email ? email.split('@')[0] : 'Usuario'
+        const username = userData?.username || session.user.email?.split('@')[0] || 'Usuario'
+        const avatar = userData?.avatar || ''
+        
         sessionStorage.setItem('name', username)
-      } else {
-        // Usar el username de la tabla usuarios
-        sessionStorage.setItem('name', userData.username)
+        if (avatar) {
+          sessionStorage.setItem('avatar', avatar)
+        }
+
+        const numberDictionary = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+        const randomName: string = uniqueNamesGenerator({
+          dictionaries: [colors, numberDictionary, numberDictionary, numberDictionary, numberDictionary, numberDictionary],
+          separator: '',
+          length: 6,
+        })
+
+        interface InsertData {
+          room_name: string;
+          game_type: string;
+          player1: string;
+          player1_avatar: string;
+          created_at?:string;
+          board?: number[];
+          next_player?: string;
+          winner?: null;
+        }
+
+        const insertData: InsertData = {
+          room_name: randomName,
+          game_type: gameType,
+          player1: username,
+          player1_avatar: avatar,
+          created_at: new Date().toISOString()
+        }
+
+        if (gameType === 'tictactoe') {
+          insertData.board = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+          insertData.next_player = username
+          insertData.winner = null
+        }
+
+        // Primero intentamos crear la sala
+        const { data: newGame, error: createError } = await supabase
+          .from('rooms')
+          .insert(insertData)
+          .select()
+          .single()
+
+        if (createError) {
+          console.error('Error al crear sala:', createError)
+          alert('Error al crear la partida. Por favor intenta nuevamente.')
+          router.push('/')
+          return
+        }
+
+        // Luego insertamos el resultado
+        const { error: resultError } = await supabase
+          .from('results')
+          .insert([{
+            room_name: randomName,
+            name: username,
+            result: 2,
+          }])
+
+        if (resultError) {
+          console.error('Error al crear resultado:', resultError)
+          // No redirigimos aquí porque la sala ya se creó
+        }
+
+        router.push(`/juegos/multiplayer/${randomName}`)
+      } catch (error) {
+        console.error('Error inesperado:', error)
+        alert('Ocurrió un error inesperado. Por favor intenta nuevamente.')
+        router.push('/')
       }
-
-      const numberDictionary = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-      const randomName: string = uniqueNamesGenerator({
-        dictionaries: [colors, numberDictionary, numberDictionary, numberDictionary, numberDictionary, numberDictionary],
-        separator: '',
-        length: 6,
-      })
-
-      interface InsertData {
-        room_name: string;
-        game_type: string;
-        board?: number[];
-        next_player?: string;
-        winner?: null;
-      }
-      const insertData: InsertData = {
-        room_name: randomName,
-        game_type: gameType,
-      }
-
-      if (gameType === 'tictactoe') {
-        insertData.board = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-        insertData.next_player = sessionStorage.getItem('name') || 'Usuario'
-        insertData.winner = null
-      }
-
-      const newGame = await supabase
-        .from('rooms')
-        .insert(insertData)
-        .select()
-        .single()
-
-      if (newGame.error) {
-        console.error(newGame.error)
-        return
-      }
-
-      const insertResult = await supabase
-        .from('results')
-        .insert([{
-          room_name: newGame.data.room_name || '',
-          name: sessionStorage.getItem('name') || 'Usuario',
-          result: 0,
-        }])
-
-      if (insertResult.error) {
-        console.error(insertResult.error)
-        return
-      }
-
-      router.push(`/juegos/multiplayer/${newGame.data.room_name}`)
     }
 
     createAndRedirectToGame()
