@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { AiOutlineClose } from "react-icons/ai";
-import { guardarDatos, actualizarContraseña, uploadAvatar, deletePreviousAvatar } from './actions';
+import { guardarDatos, actualizarContraseña, uploadAvatar, deletePreviousAvatar, Friend, FriendDetails, obtenerDetallesAmigo } from './actions';
 import { CurrentProfileAvatar } from '@/components/current-profile-avatar';
 import Image from 'next/image';
 import { ProfileFormSchema } from '@/app/auth/definitions';
+import { obtenerAmigosConAvatares, quitarAmigo } from './actions';
+
 
 interface UserData {
   username: string;
@@ -16,11 +18,13 @@ interface UserData {
   victorias: number;
   empates: number;
   derrotas: number;
+  currentUserId: string;
 }
 
-export default function ChatClient({ userData: initialUserData }: { userData: UserData }) {
+export default function PerfilClient({ userData: initialUserData }: { userData: UserData }) {
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(initialUserData);
+
   const [formErrors, setFormErrors] = useState<{
     username?: string,
     descripcion?: string[];
@@ -37,6 +41,13 @@ export default function ChatClient({ userData: initialUserData }: { userData: Us
     password: "",
     repassword: ""
   });
+
+  const [amigos, setAmigos] = useState<Friend[]>([]);
+  const [amigoAEliminar, setAmigoAEliminar] = useState<Friend | null>(null);
+  const [amigoDetalles, setAmigoDetalles] = useState<FriendDetails | null>(null);
+  const [loadingDetalles, setLoadingDetalles] = useState(false);
+  const [loadingAmigos, setLoadingAmigos] = useState<Record<string, boolean>>({});
+
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -56,6 +67,40 @@ export default function ChatClient({ userData: initialUserData }: { userData: Us
 
     setIsDirty(dataChanged);
   }, [formData, initialUserData]);
+
+
+  useEffect(() => {
+    const cargarAmigos = async () => {
+      try {
+        const listaAmigos = await obtenerAmigosConAvatares(userData.currentUserId);
+        setAmigos(listaAmigos);
+      } catch (error) {
+        console.error('Error al cargar amigos:', error);
+      }
+    };
+    cargarAmigos();
+  }, [userData.currentUserId]);
+
+  const handleQuitarAmigo = async (amigoId: string) => {
+    try {
+      setLoadingAmigos(prev => ({ ...prev, [amigoId]: true }));
+
+      const result = await quitarAmigo(userData.currentUserId, amigoId);
+
+      if (result.success) {
+        setAmigos(prev => prev.filter(a => a.id !== amigoId));
+        setSuccessMessage(result.message);
+      } else {
+        setFormErrors({ message: result.message });
+      }
+    } catch (error) {
+      console.error('Error al quitar amigo:', error);
+      setFormErrors({ message: 'Error al quitar amigo' });
+    } finally {
+      setLoadingAmigos(prev => ({ ...prev, [amigoId]: false }));
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -79,53 +124,52 @@ export default function ChatClient({ userData: initialUserData }: { userData: Us
     }
   };
 
-const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  setIsUploading(true);
-  setFormErrors({});
+    setIsUploading(true);
+    setFormErrors({});
 
-  try {
-    // Verificación básica del archivo
-    if (!file.type.startsWith('image/')) {
-      throw new Error('Solo se permiten imágenes (JPEG, PNG, GIF)');
+    try {
+      // Verificación básica del archivo
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Solo se permiten imágenes (JPEG, PNG, GIF)');
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        throw new Error('La imagen no puede exceder 2MB');
+      }
+
+      // Subir el archivo
+      const result = await uploadAvatar(userData.email, file);
+
+      interface UploadResult {
+        success: boolean;
+        error?: string;
+      }
+
+      if (!result.success) {
+        throw new Error((result as UploadResult).error || 'Error al guardar el avatar');
+      }
+
+      // Actualizar estado
+      setUserData(prev => ({
+        ...prev,
+        avatar: result.avatarUrl
+      }));
+
+      setSuccessMessage('Avatar actualizado correctamente');
+
+    } catch (error) {
+      setFormErrors({
+        message: error instanceof Error ?
+          (error as Error).message : JSON.stringify(error)
+      });
+    } finally {
+      setIsUploading(false);
     }
-
-    if (file.size > 2 * 1024 * 1024) {
-      throw new Error('La imagen no puede exceder 2MB');
-    }
-
-    // Subir el archivo
-    const result = await uploadAvatar(userData.email, file);
-
-    interface UploadResult {
-      success: boolean;
-      error?: string;
-    }
-
-    if (!result.success) {
-      throw new Error((result as UploadResult).error || 'Error al guardar el avatar');
-    }
-
-    // Actualizar estado
-    setUserData(prev => ({
-      ...prev,
-      avatar: result.avatarUrl
-    }));
-
-    setSuccessMessage('Avatar actualizado correctamente');
-    
-  } catch (error) {
-    setFormErrors({
-      message: error instanceof Error ? 
-        error.message : 
-        'Error inesperado al subir avatar'
-    });
-  } finally {
-    setIsUploading(false);
-  }
-};
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -214,6 +258,47 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
       setFormErrors({ message: errorMessage });
     }
   };
+ // Función para ver detalles del amigo
+  const handleVerDetallesAmigo = async (amigo: Friend) => {
+    setLoadingDetalles(true);
+    try {
+      
+      const response = await obtenerDetallesAmigo(amigo.id, amigo.username);
+      const data =  response;
+
+      
+      setAmigoDetalles(data);
+    } catch (error) {
+      console.error('Error al obtener detalles del amigo:', error);
+      // Mostrar solo la información básica si falla la consulta
+      setAmigoDetalles(amigo);
+    } finally {
+      setLoadingDetalles(false);
+    }
+  };
+
+  // Función para confirmar eliminación
+  const confirmarQuitarAmigo = async () => {
+    if (!amigoAEliminar) return;
+    
+    try {
+      setLoadingAmigos(prev => ({ ...prev, [amigoAEliminar.id]: true }));
+      
+      const response = await   quitarAmigo(userData.currentUserId, amigoAEliminar.id);
+      
+      const result =  response;
+      
+      setAmigos(prev => prev.filter(a => a.id !== amigoAEliminar.id));
+      setSuccessMessage(result.message);
+    } catch (error) {
+      console.error('Error al quitar amigo:', error);
+      setFormErrors({ message: error instanceof Error ? error.message : 'Error al quitar amigo' });
+    } finally {
+      setLoadingAmigos(prev => ({ ...prev, [amigoAEliminar.id]: false }));
+      setAmigoAEliminar(null);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col md:flex-row justify-center gap-3 p-2 md:p-4">
@@ -239,7 +324,7 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
               height={200}
             />
 
-            <div 
+            <div
               className="absolute -top-12 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-pink-100 dark:border-navy-700 cursor-pointer hover:opacity-90 transition-opacity"
               onClick={handleAvatarClick}
               title="Cambiar avatar"
@@ -249,17 +334,20 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
                 </div>
               ) : null}
-              
+
               {avatarPreview ? (
-                <img 
-                  src={avatarPreview} 
-                  className="h-full w-full rounded-full object-cover" 
+                <Image
+                  src={avatarPreview!}
                   alt="Avatar preview"
+                  fill
+                  className="object-cover rounded-full"
                 />
               ) : userData.avatar ? (
-                <img 
-                  src={userData.avatar} 
-                  className="h-full w-full rounded-full object-cover" 
+                <Image
+                  src={userData.avatar}
+                  width={100} 
+                  height={100}
+                  className="h-full w-full rounded-full object-cover"
                   alt="Avatar del usuario"
                 />
               ) : (
@@ -271,7 +359,7 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
               <h4 className="text-xl font-bold">
                 {userData.username}
               </h4>
-              
+
               <p className="text-gray-800 font-bold">
                 Miembro desde el <span>{formattedDate}</span>
               </p>
@@ -298,41 +386,181 @@ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
           </div>
         </div>
 
-        {/* Sección de Lista de Amigos */}
-        <div className="flex-1 rounded-2xl overflow-hidden shadow-lg bg-white dark:bg-navy-800 p-4">
-          <h3 className="text-lg font-bold text-navy-700 dark:text-white mb-4">Lista de amigos</h3>
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((item) => (
+
+
+
+         {/* Sección de Lista de Amigos - Actualizada */}
+      <div className="flex-1 rounded-2xl overflow-hidden shadow-lg bg-white dark:bg-navy-800 p-4">
+        <h3 className="text-lg font-bold text-navy-700 dark:text-white mb-4">
+          Lista de amigos ({amigos.length})
+        </h3>
+
+        {amigos.length === 0 ? (
+          <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+            No tienes amigos agregados todavía
+          </div>
+        ) : (
+          <div className="space-y-3 max-h-[300px] overflow-y-auto">
+            {amigos.map((amigo) => (
               <div
-                key={item}
+                key={amigo.id}
                 className="flex items-center justify-between gap-3 p-2 hover:bg-gray-100 dark:hover:bg-navy-700 rounded-lg transition-colors"
               >
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-navy-600"></div>
-                  <div>
-                    <p className="font-medium text-navy-700 dark:text-white">Amigo {item}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">En línea {item}h</p>
+                <div 
+                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                  onClick={() => handleVerDetallesAmigo(amigo)}
+                >
+                  <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
+                    {amigo.avatar ? (
+                      <Image
+                        src={amigo.avatar}
+                        alt={`Avatar de ${amigo.username}`}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-gray-300 dark:bg-navy-600 flex items-center justify-center">
+                        <span className="text-xs font-medium">
+                          {amigo.username.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-navy-700 dark:text-white truncate">
+                      {amigo.username}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-right">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="flex-1 cursor-pointer py-2 px-4 hover:bg-red-600 hover:text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 group"
-                  >
-                    Eliminar
-                    <AiOutlineClose
-                      className="transition-transform duration-200 group-hover:scale-[1.5]"
-                    />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAmigoAEliminar(amigo);
+                  }}
+                  disabled={loadingAmigos[amigo.id]}
+                  className="p-2 text-red-500 hover:text-white hover:bg-red-500 rounded-full transition-colors"
+                  title="Eliminar amigo"
+                >
+                  {loadingAmigos[amigo.id] ? (
+                    <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <AiOutlineClose className="text-lg" />
+                  )}
+                </button>
               </div>
             ))}
           </div>
-          <button className="mt-4 w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
-            Añadir amigo
-          </button>
+        )}
+      </div>
+
+      {/* Modal de Confirmación para Eliminar Amigo */}
+      {amigoAEliminar && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-navy-700 p-6 rounded-lg max-w-md w-full">
+            <h3 className="text-lg font-bold mb-4">Confirmar eliminación</h3>
+            <p className="mb-4">
+              ¿Estás seguro de que quieres eliminar a <span className="font-semibold">{amigoAEliminar.username}</span> de tu lista de amigos?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setAmigoAEliminar(null)}
+                className="px-4 py-2 bg-gray-300 dark:bg-navy-600 hover:bg-gray-400 dark:hover:bg-navy-500 rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarQuitarAmigo}
+                disabled={loadingAmigos[amigoAEliminar.id]}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors disabled:opacity-70"
+              >
+                {loadingAmigos[amigoAEliminar.id] ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Modal de Detalles del Amigo */}
+      {amigoDetalles && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-navy-700 p-6 rounded-lg max-w-md w-full relative">
+            <button
+              onClick={() => setAmigoDetalles(null)}
+              className="absolute top-4 right-4 p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            >
+              <AiOutlineClose className="text-xl" />
+            </button>
+            
+            <div className="flex flex-col items-center mb-6">
+              <div className="relative h-20 w-20 rounded-full overflow-hidden mb-4">
+                {amigoDetalles.avatar ? (
+                  <Image
+                    src={amigoDetalles.avatar}
+                    alt={`Avatar de ${amigoDetalles.username}`}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gray-300 dark:bg-navy-600 flex items-center justify-center">
+                    <span className="text-2xl font-medium">
+                      {amigoDetalles.username.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <h3 className="text-xl font-bold text-center">{amigoDetalles.username}</h3>
+            </div>
+
+            {loadingDetalles ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <>
+                {amigoDetalles.descripcion && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Descripción</h4>
+                    <p className="text-gray-700 dark:text-gray-300">{amigoDetalles.descripcion}</p>
+                  </div>
+                )}
+
+                {amigoDetalles.favorito && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Juego favorito</h4>
+                    <p className="text-gray-700 dark:text-gray-300 capitalize">{amigoDetalles.favorito}</p>
+                  </div>
+                )}
+
+                {(amigoDetalles.victorias !== undefined || amigoDetalles.empates !== undefined || amigoDetalles.derrotas !== undefined) && (
+                  <div className="grid grid-cols-3 gap-4 mt-6">
+                    <div className="flex flex-col items-center">
+                      <p className="text-2xl font-bold text-navy-700 dark:text-white">
+                        {amigoDetalles.victorias ?? 0}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Victorias</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <p className="text-2xl font-bold text-navy-700 dark:text-white">
+                        {amigoDetalles.empates ?? 0}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Empates</p>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <p className="text-2xl font-bold text-navy-700 dark:text-white">
+                        {amigoDetalles.derrotas ?? 0}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Derrotas</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+
       </div>
 
       {/* Columna derecha - Formulario de perfil */}

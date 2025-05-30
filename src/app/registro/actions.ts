@@ -34,52 +34,77 @@ export async function registro(prevState: FormState, formData: FormData): Promis
     });
 
     if (authError) {
-      console.error('Supabase Auth Error:', authError); 
-    
+      console.error('Supabase Auth Error al intentar signUp:', authError);
+      // Puedes intentar ser más específico si conoces los posibles errores de auth
+      if (authError.message.includes('already registered')) {
+        return { message: 'El correo electrónico ya está registrado.' };
+      }
+      if (authError.message.includes('password is too weak')) {
+        return { message: 'La contraseña es demasiado débil.' };
+      }
       return {
-        message: authError.message 
+        message: `Error de autenticación: ${authError.message}` // Mensaje más descriptivo
       };
     }
 
-    // if (authError) {
-    //   return {
-    //     errors: { 
-    //       email: [authError.message.includes('email') ? 'El email ya está registrado' : 'Error de autenticación'],
-    //       ...(authError.message.includes('password') && { password: ['Contraseña no válida'] })
-    //     },
-    //     message: 'Error al registrar usuario'
-    //   };
-    // }
+    // Si el usuario no se crea en Auth (aunque signUp no devuelva un error,
+    // data.user podría ser null si se requiere confirmación por email y aún no está verificado)
+    if (!authData.user) {
+        // Esto puede ocurrir si el registro requiere confirmación de email y
+        // Supabase solo crea un usuario "no confirmado" pero no devuelve error.
+        // El usuario necesita confirmar su email antes de que podamos insertarlo en nuestra tabla.
+        // La tabla 'usuarios' requiere un 'id' que viene de authData.user.id
+        return {
+            message: 'Registro exitoso, por favor, revisa tu correo para confirmar tu cuenta.'
+        };
+    }
 
     // 3. Insertar en tabla usuarios
-    if (authData.user) {
-      const { error: dbError } = await supabase
-        .from('usuarios')
-        .insert({
-          id: authData.user.id,
-          username,
-          email
-        });
+    const { error: dbError } = await supabase
+      .from('usuarios')
+      .insert({
+        id: authData.user.id,
+        username,
+        email
+      });
 
-      if (dbError) {
+    if (dbError) {
+      console.error('Supabase DB Error al insertar usuario en tabla "usuarios":', dbError); // MUY IMPORTANTE PARA DEPURAR
+
+      // Intenta revertir la creación del usuario en Auth si la inserción en DB falla
+      // Solo borra si la inserción en DB fue un error real y no una 'duplicate key' que ya manejas.
+      // Aquí, la lógica sugiere que si llegamos aquí, NO es un 'duplicate key' en la tabla 'usuarios'
+      // ya que Zod valida el username y el email al inicio, y el auth.signUp ya manejaría
+      // emails duplicados en la autenticación.
+      // Sin embargo, si el `username` tiene una restricción UNIQUE en la tabla `usuarios`,
+      // este `dbError` podría ser por eso, y el `auth.admin.deleteUser` es correcto.
+      if (dbError.message.includes('duplicate key value violates unique constraint')) {
+        // Si el error es una violación de clave única (ej. username ya existe)
+        // en la tabla 'usuarios' y no fue capturado por Zod o Auth, borramos el usuario de Auth.
         await supabase.auth.admin.deleteUser(authData.user.id);
         return {
-          message: dbError.message.includes('duplicate key') 
-            ? 'Nombre de usuario o correo no válidos' 
-            : 'Error al completar el registro'
+          message: 'El nombre de usuario o correo electrónico ya están en uso (o no válidos).'
+        };
+      } else {
+        // Este es el error "inesperado" que quieres depurar
+        await supabase.auth.admin.deleteUser(authData.user.id); // Revertir creación de Auth
+        return {
+          message: `Error al completar el registro: ${dbError.message || 'Error desconocido en la base de datos'}`
         };
       }
     }
 
-    return { 
-      message: 'Usuario registrado correctamente', 
-      errors: {},
-     
-    };
-  } catch (error) {
-    console.error("Error en el proceso de registro:", error);
+    // Si todo fue bien (auth y db insert)
     return {
-      message: 'Ocurrió un error inesperado',
+      message: 'Usuario registrado correctamente',
+      errors: {},
+    };
+
+  } catch (error) {
+    console.error("Error inesperado en el proceso de registro (catch block):", error);
+    // Si llegamos aquí, es un error no capturado por Supabase
+    return {
+      message: 'Ocurrió un error inesperado durante el registro.',
       errors: {}
     };
   }

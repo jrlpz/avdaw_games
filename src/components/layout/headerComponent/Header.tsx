@@ -116,6 +116,9 @@ const Header = ({ userData }: { userData: UserData | null }) => {
                 <Link href="/chat" className="block px-4 py-2 hover:bg-gray-600 hover:text-white mt-2" onClick={closeMenu}>
                   Chat
                 </Link>
+                 <Link href="/ranking" className="block px-4 py-2 hover:bg-gray-600 hover:text-white mt-2" onClick={closeMenu}>
+                  Estadísticas
+                </Link>
               </li>
             </ul>
           </div>
@@ -156,6 +159,7 @@ const Header = ({ userData }: { userData: UserData | null }) => {
           </div>
 
           <Link href="/chat" className="text-white hover:text-gray-400">Chat</Link>
+                <Link href="/ranking" className="text-white hover:text-gray-400">Estadísticas</Link>
         </div>
       </div>
 
