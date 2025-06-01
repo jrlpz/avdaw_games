@@ -5,8 +5,8 @@ import { guardarDatos, actualizarContraseña, uploadAvatar, deletePreviousAvatar
 import { CurrentProfileAvatar } from '@/components/current-profile-avatar';
 import Image from 'next/image';
 import { ProfileFormSchema } from '@/app/auth/definitions';
-import { obtenerAmigosConAvatares, quitarAmigo } from './actions';
-
+import { obtenerAmigosConAvatares, quitarAmigo, buscarUsuarios, agregarAmigo } from './actions';
+import { createClient } from '@/utils/supabase/client';
 
 interface UserData {
   username: string;
@@ -41,12 +41,19 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
     password: "",
     repassword: ""
   });
-
+ const supabase = createClient(); 
   const [amigos, setAmigos] = useState<Friend[]>([]);
   const [amigoAEliminar, setAmigoAEliminar] = useState<Friend | null>(null);
   const [amigoDetalles, setAmigoDetalles] = useState<FriendDetails | null>(null);
   const [loadingDetalles, setLoadingDetalles] = useState(false);
   const [loadingAmigos, setLoadingAmigos] = useState<Record<string, boolean>>({});
+
+
+  // Nuevos estados para la búsqueda
+  const [terminoBusqueda, setTerminoBusqueda] = useState('');
+  const [resultadosBusqueda, setResultadosBusqueda] = useState<Friend[]>([]);
+  const [buscando, setBuscando] = useState(false);
+  const [agregandoAmigo, setAgregandoAmigo] = useState<Record<string, boolean>>({});
 
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -69,16 +76,34 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
   }, [formData, initialUserData]);
 
 
-  useEffect(() => {
+ useEffect(() => {
     const cargarAmigos = async () => {
-      try {
-        const listaAmigos = await obtenerAmigosConAvatares(userData.currentUserId);
-        setAmigos(listaAmigos);
-      } catch (error) {
-        console.error('Error al cargar amigos:', error);
-      }
+      const listaAmigos = await obtenerAmigosConAvatares(userData.currentUserId);
+      setAmigos(listaAmigos);
     };
+
     cargarAmigos();
+
+    // 2. Suscripción a cambios en tiempo real
+    const channel = supabase
+      .channel(`amigos_${userData.currentUserId}`) // Canal único por usuario
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'usuarios',
+          filter: `id=eq.${userData.currentUserId}`,
+        },
+        (payload) => {
+          setAmigos(payload.new.amigos || []);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel); // Limpieza al desmontar
+    };
   }, [userData.currentUserId]);
 
   const handleQuitarAmigo = async (amigoId: string) => {
@@ -299,6 +324,52 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
       setTimeout(() => setSuccessMessage(null), 3000);
     }
   };
+  // Función para buscar usuarios
+  const handleBuscarUsuarios = async () => {
+    if (!terminoBusqueda.trim()) {
+      setResultadosBusqueda([]);
+      return;
+    }
+
+    setBuscando(true);
+    try {
+      const resultados = await buscarUsuarios(terminoBusqueda, userData.currentUserId);
+      setResultadosBusqueda(resultados);
+    } catch (error) {
+      console.error('Error al buscar usuarios:', error);
+      setResultadosBusqueda([]);
+    } finally {
+      setBuscando(false);
+    }
+  };
+
+  // Función para agregar amigo
+  const handleAgregarAmigo = async (amigo: Friend) => {
+    setAgregandoAmigo(prev => ({ ...prev, [amigo.id]: true }));
+    try {
+      const resultado = await agregarAmigo(
+        userData.currentUserId,
+        amigo.id,
+        amigo.username
+      );
+
+      if (resultado.success && resultado.amigo) {
+        setAmigos(prev => [...prev, resultado.amigo!]);
+        setSuccessMessage(`¡${amigo.username} agregado a tus amigos!`);
+        // Limpiar resultados de búsqueda
+        setResultadosBusqueda([]);
+        setTerminoBusqueda('');
+      } else {
+        setFormErrors({ message: resultado.message || 'Error al agregar amigo' });
+      }
+    } catch (error) {
+      console.error('Error al agregar amigo:', error);
+      setFormErrors({ message: 'Error al agregar amigo' });
+    } finally {
+      setAgregandoAmigo(prev => ({ ...prev, [amigo.id]: false }));
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col md:flex-row justify-center gap-3 p-2 md:p-4">
@@ -342,6 +413,7 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
                   fill
                   className="object-cover rounded-full"
                 />
+             
               ) : userData.avatar ? (
                 <Image
                   src={userData.avatar}
@@ -353,6 +425,7 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
               ) : (
                 <CurrentProfileAvatar className="h-full w-full rounded-full object-cover" />
               )}
+              
             </div>
 
             <div className="text-center z-0">
@@ -389,15 +462,90 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
 
 
 
-         {/* Sección de Lista de Amigos - Actualizada */}
+            {/* Sección de Lista de Amigos - Actualizada con búsqueda */}
       <div className="flex-1 rounded-2xl overflow-hidden shadow-lg bg-white dark:bg-navy-800 p-4">
         <h3 className="text-lg font-bold text-navy-700 dark:text-white mb-4">
           Lista de amigos ({amigos.length})
         </h3>
 
+        {/* Barra de búsqueda */}
+        <div className="relative mb-4">
+          <input
+            type="text"
+            value={terminoBusqueda}
+            onChange={(e) => setTerminoBusqueda(e.target.value)}
+            onKeyUp={(e) => e.key === 'Enter' && handleBuscarUsuarios()}
+            placeholder="Buscar usuarios..."
+            className="w-full px-4 py-2 border border-gray-300 dark:border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-navy-700 dark:text-white"
+          />
+          <button
+            onClick={handleBuscarUsuarios}
+            disabled={buscando}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            {buscando ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+      {/* Resultados de búsqueda */}
+          {resultadosBusqueda.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                Resultados de búsqueda ({resultadosBusqueda.length})
+              </h4>
+              <div className="space-y-2">
+                {resultadosBusqueda.map((usuario) => {
+                  const yaEsAmigo = amigos.some(a => a.id === usuario.id);
+
+                  return (
+                    <div key={usuario.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-navy-700 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-8 w-8 rounded-full overflow-hidden">
+                          {usuario.avatar ? (
+                            <Image
+                              src={usuario.avatar}
+                              alt={`Avatar de ${usuario.username}`}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full bg-gray-300 dark:bg-navy-600 flex items-center justify-center">
+                              <span className="text-xs font-medium">
+                                {usuario.username.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-medium">{usuario.username}</span>
+                      </div>
+                      <button
+                        onClick={() => handleAgregarAmigo(usuario)}
+                        disabled={yaEsAmigo || agregandoAmigo[usuario.id]}
+                        className={`px-3 py-1 text-sm ${yaEsAmigo
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-blue-500 hover:bg-blue-600'
+                          } text-white rounded-lg transition-colors`}
+                      >
+                        {yaEsAmigo ? 'Ya es amigo' :
+                          agregandoAmigo[usuario.id] ? 'Agregando...' : 'Agregar'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+        {/* Lista de amigos existente */}
         {amigos.length === 0 ? (
           <div className="text-center py-4 text-gray-500 dark:text-gray-400">
-            No tienes amigos agregados todavía
+            {resultadosBusqueda.length === 0 ? 'No tienes amigos agregados todavía' : ''}
           </div>
         ) : (
           <div className="space-y-3 max-h-[300px] overflow-y-auto">

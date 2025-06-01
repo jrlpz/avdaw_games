@@ -3,51 +3,52 @@ import './HomePage.css';
 import Image from 'next/image';
 import Link from 'next/link';
 import { VscTriangleDown } from "react-icons/vsc";
+import {getGamesFromDatabase} from '@/app/actions'; // Asegúrate de que la ruta sea correcta
 
-export default function HomePage() {
+export default async function HomePage() {
+  const { singlePlayer, multiPlayer } = await getGamesFromDatabase();
+
+//---Datos locales
+  // const minijuegosSinglePlayer = [
+  //   {
+  //     id: 'tictactoe',
+  //     nombre: 'TicTacToe',
+  //     descripcion: 'El clásico 3 en raya contra la máquina',
+  //     imagen: '/images/tictactoe.png',
+  //     modo: 'single'
+  //   },
+  //   {
+  //     id: 'words',
+  //     nombre: 'Words',
+  //     descripcion: 'Adivina la palabra en modo individual',
+  //     imagen: '/images/words.png',
+  //     modo: 'single'
+  //   },
+  // ];
+
+  // const minijuegosMultiPlayer = [
+  //   // TicTacToe Multijugador Online (este enlazará a /juegos/multiplayer/tictactoe)
+  //   {
+  //     id: 'tictactoe',
+  //     nombre: 'TicTacToe (2J - Online)',
+  //     descripcion: 'El clásico 3 en raya, juega con amigos online.',
+  //     imagen: '/images/tictactoe2.png',
+  //     modo: 'multi',
+  //     pathPrefix: '/juegos/multiplayer'
+  //   },
+
+  //   // TicTacToe Multijugador Local (este enlazará a /juegos/local/tictactoe-local)
+  //   {
+  //     id: 'tictactoe_local',
+  //     nombre: 'TicTacToe (2J - Local)',
+  //     descripcion: 'El clásico 3 en raya, juega con amigos localmente.',
+  //     imagen: '/images/tictactoe3.png',
+  //     modo: 'multi',
+  //     pathPrefix: '/juegos/local'
+  //   },
 
 
-//---Migrar info de juegos a base de datos
-  const minijuegosSinglePlayer = [
-    {
-      id: 'tictactoe',
-      nombre: 'TicTacToe',
-      descripcion: 'El clásico 3 en raya contra la máquina',
-      imagen: '/images/tictactoe.png',
-      modo: 'single'
-    },
-    {
-      id: 'words',
-      nombre: 'Words',
-      descripcion: 'Adivina la palabra en modo individual',
-      imagen: '/images/words.png',
-      modo: 'single'
-    },
-  ];
-
-  const minijuegosMultiPlayer = [
-    // TicTacToe Multijugador Online (este enlazará a /juegos/multiplayer/tictactoe)
-    {
-      id: 'tictactoe',
-      nombre: 'TicTacToe (2J - Online)',
-      descripcion: 'El clásico 3 en raya, juega con amigos online.',
-      imagen: '/images/tictactoe2.png',
-      modo: 'multi',
-      pathPrefix: '/juegos/multiplayer'
-    },
-
-    // TicTacToe Multijugador Local (este enlazará a /juegos/local/tictactoe-local)
-    {
-      id: 'tictactoe_local',
-      nombre: 'TicTacToe (2J - Local)',
-      descripcion: 'El clásico 3 en raya, juega con amigos localmente.',
-      imagen: '/images/tictactoe3.png',
-      modo: 'multi',
-      pathPrefix: '/juegos/local'
-    },
-
-
-  ];
+  // ];
 //--------------------------------------------
 
   return (
@@ -73,9 +74,9 @@ export default function HomePage() {
           Un Jugador
         </h2>
         <div className="minijuegos-container">
-        {minijuegosSinglePlayer.map((juego) => (
+        {singlePlayer.map((juego) => (
   <div className="minijuego-item" key={`single-${juego.id}`}>
-    <Link href={`/juegos/${juego.id}`}>
+    <Link href={`/juegos/${juego.game_id}`}>
       <div className="minijuego-content">
         <Image
           src={juego.imagen}
@@ -103,10 +104,10 @@ export default function HomePage() {
           Multijugador
         </h2>
         <div className="minijuegos-container">
-          {minijuegosMultiPlayer.map((juego) => (
+          {multiPlayer.map((juego) => (
 
             <div className="minijuego-item" key={`multi-${juego.id}`}>
-              <Link href={`${juego.pathPrefix}/${juego.id}`}>
+              <Link href={`${juego.pathPrefix}/${juego.game_id}`}>
               <div className="minijuego-content"> 
                 <Image
                   src={juego.imagen}

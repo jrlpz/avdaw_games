@@ -308,7 +308,7 @@ export async function obtenerAmigosConAvatares(usuarioId: string): Promise<Frien
     const { data: usuario, error: userError } = await supabase
       .from('usuarios')
       .select('amigos')
-      .eq('id', usuarioId)
+      .in('id', [usuarioId]) // Cambiado a .in para buscar por ID dentro de un array
       .single();
 
     if (userError) throw userError;
@@ -324,6 +324,9 @@ export async function obtenerAmigosConAvatares(usuarioId: string): Promise<Frien
 
     if (amigosError) throw amigosError;
 
+    console.log('amigosData', amigosData); // Asegúrate de revisar los datos obtenidos aquí
+
+    // Mapeo de datos para retornar
     return amigosData?.map(amigo => ({
       id: amigo.id,
       username: amigo.username,
@@ -370,5 +373,90 @@ export async function quitarAmigo(usuarioId: string, amigoId: string) {
   } catch (error) {
     console.error('Error al quitar amigo:', error);
     return { success: false, message: `Error: ${(error as Error).message}` };
+  }
+}
+
+//-------------
+
+export async function buscarUsuarios(terminoBusqueda: string, usuarioActualId: string): Promise<Friend[]> {
+  const supabase = await createClient();
+  
+  try {
+    // Buscar usuarios que coincidan con el término (excluyendo al usuario actual)
+    const { data: usuarios, error } = await supabase
+      .from('usuarios')
+      .select('id, username, avatar')
+      .ilike('username', `%${terminoBusqueda}%`)
+      .neq('id', usuarioActualId)
+      .limit(10);
+
+    if (error) throw error;
+
+    return usuarios || [];
+  } catch (error) {
+    console.error('Error al buscar usuarios:', error);
+    return [];
+  }
+}
+
+export async function agregarAmigo(usuarioId: string, amigoId: string, amigoUsername: string) {
+  const supabase = await createClient();
+  
+  try {
+    // 1. Obtener información del amigo (incluyendo avatar)
+    const { data: amigoData, error: amigoError } = await supabase
+      .from('usuarios')
+      .select('id, username, avatar')
+      .eq('id', amigoId)
+      .single();
+
+    if (amigoError) throw amigoError;
+    if (!amigoData) throw new Error('Usuario amigo no encontrado');
+
+    // 2. Obtener el usuario actual
+    const { data: usuario, error: userError } = await supabase
+      .from('usuarios')
+      .select('amigos')
+      .eq('id', usuarioId)
+      .single();
+
+    if (userError) throw userError;
+    if (!usuario) throw new Error('Usuario no encontrado');
+
+    // 3. Verificar si ya son amigos
+    const amigosActuales: Friend[] = usuario.amigos || [];
+    const yaEsAmigo = amigosActuales.some(a => a.id === amigoId);
+    
+    if (yaEsAmigo) {
+      return { success: false, message: 'Ya es tu amigo' };
+    }
+
+    // 4. Añadir el nuevo amigo con su avatar
+    const nuevoAmigo: Friend = { 
+      id: amigoData.id, 
+      username: amigoData.username, 
+      avatar: amigoData.avatar 
+    };
+    const nuevosAmigos = [...amigosActuales, nuevoAmigo];
+
+    // 5. Actualizar la lista de amigos
+    const { error: updateError } = await supabase
+      .from('usuarios')
+      .update({ amigos: nuevosAmigos })
+      .eq('id', usuarioId);
+
+    if (updateError) throw updateError;
+   return { 
+      success: true, 
+      message: 'Amigo agregado correctamente', 
+      amigo: nuevoAmigo,
+      nuevosAmigos // ← Añade esto para que el cliente sepa la lista actualizada
+    };
+  } catch (error) {
+    console.error('Error al agregar amigo:', error);
+    return { 
+      success: false, 
+      message: `Error: ${(error as Error).message}` 
+    };
   }
 }

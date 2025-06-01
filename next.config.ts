@@ -1,18 +1,21 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  /* config options here */
+const nextConfig: import('next').NextConfig = {
+ 
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.supabase.co',
-        pathname: '/storage/v1/object/public/avatars/**',
+        hostname: 'npisoaxbzbcvxfomvlnx.supabase.co', 
+        port: '', 
+        pathname: '/storage/v1/object/public/**', 
       },
+     
     ],
+   
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '2mb', 
+      bodySizeLimit: '2mb',
     },
   },
 };
