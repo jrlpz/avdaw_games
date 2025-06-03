@@ -20,10 +20,10 @@ export default function TicTacToeLayout({
               Sala de espera <span className="text-blue-500">T</span>
               <span className="text-red-500">i</span>
               <span className="text-yellow-500">c</span>
-              <span className="text-blue-500">T</span>
+              <span className="text-blue-500"> T</span>
               <span className="text-green-500">a</span>
               <span className="text-red-500">c</span>
-              <span className="text-blue-500">T</span>
+              <span className="text-blue-500"> T</span>
               <span className="text-red-500">o</span>
               <span className="text-green-500">e</span>
             </h1>

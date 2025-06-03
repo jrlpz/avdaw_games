@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
-
+import { GiTicTacToe } from 'react-icons/gi';
 export default function JoinGamePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -54,6 +54,9 @@ export default function JoinGamePage() {
     getSessionAndUser()
   }, [router, searchParams])
 
+// En el archivo JoinGamePage.tsx
+// Modificar el handleSubmit:
+
 const handleSubmit = async (event: React.FormEvent) => {
   event.preventDefault();
   
@@ -63,53 +66,53 @@ const handleSubmit = async (event: React.FormEvent) => {
   }
 
   const supabase = createClient();
+  const currentUser = sessionStorage.getItem('name');
+  const currentAvatar = sessionStorage.getItem('avatar');
   
-  // Verificar si la sala existe de manera más robusta
-  const { data: existingRoom, error: roomError } = await supabase
-    .from('rooms')
-    .select('room_name, player1, player2')
-    .eq('room_name', roomCode)
-    .single();
+  // Verificar si la sala existe
+const { data: existingRoom, error: roomError } = await supabase
+  .from('rooms')
+  .select('room_name, player1, player2, player1_symbol, player2_symbol')
+  .eq('room_name', roomCode)
+  .single();
 
-  // Si hay error Y no es porque no encontró la sala
   if (roomError && roomError.code !== 'PGRST116') {
     console.error('Error al verificar sala:', roomError);
     alert('Error al verificar la sala. Intenta nuevamente.');
     return;
   }
 
-  // Si la sala no existe
   if (!existingRoom) {
     alert('La sala no existe. Verifica el código.');
     return;
   }
 
-  // Si la sala ya tiene 2 jugadores
   if (existingRoom.player1 && existingRoom.player2) {
     alert('La sala ya está llena (2 jugadores)');
     return;
   }
 
-  // Si somos el segundo jugador, actualizamos la sala
-  const currentUser = sessionStorage.getItem('name');
-  const currentAvatar = sessionStorage.getItem('avatar');
-  
-  if (existingRoom.player1 !== currentUser) {
-    const { error: updateError } = await supabase
-      .from('rooms')
-      .update({
-        player2: currentUser,
-        player2_avatar: currentAvatar
-      })
-      .eq('room_name', roomCode);
+ if (existingRoom.player1 !== currentUser) {
+  const { error: updateError } = await supabase
+    .from('rooms')
+    .update({
+      player2: currentUser,
+      player2_avatar: currentAvatar
+    })
+    .eq('room_name', roomCode);
 
-    if (updateError) {
-      console.error('Error al unirse como jugador 2:', updateError);
-      alert('Error al unirse a la sala.');
-      return;
-    }
+  if (updateError) {
+    console.error('Error al unirse como jugador 2:', updateError);
+    alert('Error al unirse a la sala.');
+    return;
   }
 
+  // Guardar el símbolo CORRECTO del jugador 2 en sessionStorage
+  sessionStorage.setItem('playerSymbol', existingRoom.player2_symbol);
+} else {
+  // Si somos el jugador 1, guardar nuestro símbolo
+  sessionStorage.setItem('playerSymbol', existingRoom.player1_symbol);
+}
   // Registrar en la tabla results
   const insertResult = await supabase.from('results').insert([
     {
@@ -141,22 +144,34 @@ const handleSubmit = async (event: React.FormEvent) => {
       className="flex flex-col items-center justify-center mt-8 space-y-4"
       onSubmit={handleSubmit}
     >
-      <div className="px-8 py-4 bg-gray-200 text-black rounded-lg shadow-lg w-full text-center">
-        Jugando como: <strong>{username}</strong>
+           <div className="text-center mb-6 sm:mb-12 mt-4 sm:mt-4 w-full">
+        <div className="flex flex-col items-center gap-4 sm:gap-6 justify-center">
+          <h4 className="text-slate-600 text-xl font-semibold">
+            <div className="flex items-center space-x-2">
+              <h1 className="text-2xl sm:text-3xl font-bold">Tic Tac Toe</h1>
+              <GiTicTacToe className="text-2xl sm:text-3xl" />
+            </div>
+          </h4>
+        </div>
       </div>
+      <div className="px-8 py-4 bg-purple-950 text-white p-3 sm:p-4 rounded-lg shadow-lg w-full max-w-md text-center">
+       Introduce un código pata unirte como <strong>{username}</strong>
+     
       <input
-        className="px-8 py-4 bg-white text-black rounded-lg shadow-lg w-full"
+        className="px-4 py-4 mt-4 bg-white text-black rounded-lg shadow-lg max-w-md w-full text-center"
         placeholder="Código de la sala"
         value={roomCode}
         onChange={(e) => setRoomCode(e.target.value)}
         required
       />
-      <button
-        className="mt-4 px-8 py-4 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition-colors"
+         <button
+        className="mt-4 px-8 py-4 ring-1  bg-slate-700 font-bold rounded-lg shadow-lg hover:bg-white hover:text-black transition-colors"
         type="submit"
       >
         Unirse a la partida
       </button>
+       </div>
+   
     </form>
   )
 }

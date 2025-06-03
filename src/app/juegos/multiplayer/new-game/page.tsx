@@ -46,6 +46,8 @@ export default function NewGamePage() {
         })
 
         interface InsertData {
+          player1_symbol: string
+          player2_symbol: string
           room_name: string;
           game_type: string;
           player1: string;
@@ -56,13 +58,24 @@ export default function NewGamePage() {
           winner?: null;
         }
 
-        const insertData: InsertData = {
-          room_name: randomName,
-          game_type: gameType,
-          player1: username,
-          player1_avatar: avatar,
-          created_at: new Date().toISOString()
-        }
+const player1Symbol = Math.random() > 0.5 ? 'X' : 'O';
+const player2Symbol = player1Symbol === 'X' ? 'O' : 'X';
+
+const insertData: InsertData = {
+  room_name: randomName,
+  game_type: gameType,
+  player1: username,
+  player1_avatar: avatar,
+  player1_symbol: player1Symbol,
+  player2_symbol: player2Symbol, // Asignar explícitamente el símbolo opuesto
+  created_at: new Date().toISOString()
+};
+
+if (gameType === 'tictactoe') {
+  insertData.board = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+  insertData.next_player = username;
+  insertData.winner = null;
+}
 
         if (gameType === 'tictactoe') {
           insertData.board = [0, 0, 0, 0, 0, 0, 0, 0, 0]
