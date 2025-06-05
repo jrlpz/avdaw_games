@@ -40,7 +40,7 @@ const Header = ({ userData }: { userData: UserData | null }) => {
     try {
       await logoutAction();
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("Error en Logout:", error);
     }
   };
   const handlePerfil = () => {
@@ -223,7 +223,6 @@ const Header = ({ userData }: { userData: UserData | null }) => {
               <FaUserCircle className="text-3xl" />
             </div>
           ) : (
-            // Si NO estamos en /login, muestra "Entrar"
             <div
               className="flex items-center space-x-2 cursor-pointer text-gray-400 hover:text-white"
               onClick={handleLoginClick}

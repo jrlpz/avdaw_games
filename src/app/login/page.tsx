@@ -46,7 +46,7 @@ export default function Login() {
       <div className="text-center mb-12 sm:mb-20">
         <div className="flex items-center gap-6 justify-center">
           <Image
-            src="/images/logo_oscuro.png" // Ensure this path is correct
+            src="/images/logo_oscuro.png"
             width={150}
             height={150}
             alt="Logo"

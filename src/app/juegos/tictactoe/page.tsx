@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from "react"; // Import useEffect
+import { useState, useEffect } from "react";
 import { useWindowSize } from 'react-use';
 
 import { FaTimes, FaRegCircle } from "react-icons/fa";
@@ -7,25 +7,22 @@ import { GiTicTacToe } from "react-icons/gi";
 
 import Confetti from 'react-confetti'
 
-// --- Constantes ---
 const HUMAN_PLAYER = 'X';
 const AI_PLAYER = 'O';
 
 export default function TicTacToe() {
 
-    // Tablero
     const [board, setBoard] = useState<Array<string | null>>(Array(9).fill(null));
 
-    //Turno aleatorio usando random para decidir quién empieza
-    const getRandomBoolean = () => Math.random() < 0.5; // devuelve true o false
+    const getRandomBoolean = () => Math.random() < 0.5;
     const [isNext, setIsNext] = useState<null | boolean>(null); 
     
-    // Ganador
+  
     const calculateWinner = (squares: Array<string | null>): string | null => { 
         const lines = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Filas
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columnas
-            [0, 4, 8], [2, 4, 6]             // Diagonales
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], 
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+            [0, 4, 8], [2, 4, 6]           
         ];
 
         for (let i = 0; i < lines.length; i++) {
@@ -34,13 +31,13 @@ export default function TicTacToe() {
                 return squares[a]; 
             }
         }
-        return null; // No hay ganador
+        return null; 
     };
 
     const winner = calculateWinner(board);
     const { width, height } = useWindowSize();
 
-    // Verificar si el juego ha terminado en empate
+
     const isBoardFull = board.every(cell => cell !== null);
     const isDraw = !winner && isBoardFull;
 
@@ -60,7 +57,7 @@ export default function TicTacToe() {
             }
         }
 
-        // 2. Comprueba si el jugador puede ganar y bloquearlo
+        // 2. Comprueba si el jugador puede ganar y lo bloquea
         for (let i = 0; i < 9; i++) {
             if (!currentBoard[i]) {
                 const tempBoard = currentBoard.slice();
@@ -99,10 +96,9 @@ export default function TicTacToe() {
             }
         }
 
-        return -1; // Por si algo va mal, no debería llegar nunca.
+        return -1;
     };
 
-    // --- Efectos para el turno de la IA ---
     useEffect(() => {
         if (isNext === null) {
           setIsNext(Math.random() < 0.5);
@@ -120,48 +116,31 @@ export default function TicTacToe() {
                     const newBoard = board.slice();
                     newBoard[bestMove] = AI_PLAYER;
                     setBoard(newBoard);
-                    setIsNext(true); // Cambiar el turno de vuelta al humano
+                    setIsNext(true); 
                 }
             }, 500); 
-
-            // Limpiar el temporizador si el componente se desmonta o las dependencias cambian
             return () => clearTimeout(timer);
         }
     }, [isNext, board, winner, isDraw]); 
 
 
-    // --- Manejador de Clic del Humano ---
+    // --- Turno de jugador humano ---
     const handleClick = (index: number) => {
-        // Permitir clic solo si:
-        // 1. Es el turno del humano (isNext === true)
-        // 2. La casilla está vacía (board[index] === null)
-        // 3. No hay ganador ni empate
         if (!isNext || board[index] || winner || isDraw) {
             return;
         }
 
-        // Crea una copia del estado actual del tablero
         const newBoard = board.slice();
-
-        // Asigna 'X' (Humano) en la posición clickeada
         newBoard[index] = HUMAN_PLAYER;
-
-        // Actualiza el estado del tablero con el nuevo movimiento
         setBoard(newBoard);
-
-        // Cambia el turno a la IA
         setIsNext(false);
     };
 
-
-    // --- Reiniciar Juego Aleatorio---
+    // --- Reiniciar Juego asignado quien empieza de manera aleatoria---
     const resetGame = () => {
         setBoard(Array(9).fill(null));
-        setIsNext(null); // Se volverá a inicializar aleatoriamente en useEffect
+        setIsNext(null); 
       };
-      
-    
-    // --- Renderizado ---
 
     if (isNext === null) {
         return <div className="text-center p-4 text-xl">Cargando...</div>;
@@ -173,8 +152,8 @@ export default function TicTacToe() {
                 <Confetti
                     width={width}
                     height={height}
-                    recycle={false} // Para que se detenga después de un tiempo
-                    numberOfPieces={winner === HUMAN_PLAYER ? 200 : 50} // Menos confeti si gana la IA 
+                    recycle={false}
+                    numberOfPieces={winner === HUMAN_PLAYER ? 200 : 50} 
                     style={{ zIndex: -1 }} 
                 />)
             }
@@ -193,7 +172,7 @@ export default function TicTacToe() {
                                         ${isNext && !value && !winner ? 'bg-white hover:bg-gray-200 cursor-pointer' : 'bg-gray-100 cursor-not-allowed'}
                                         focus:outline-none`}
                                 onClick={() => handleClick(index)}
-                                disabled={!isNext || !!value || !!winner || isDraw} // Deshabilitar si no es turno del humano, está ocupada o el juego terminó
+                                disabled={!isNext || !!value || !!winner || isDraw} 
                             >
                                 {value === HUMAN_PLAYER ? <FaTimes className="text-red-500 text-3xl" /> :
                                     value === AI_PLAYER ? <FaRegCircle className="text-blue-500 text-3xl" /> : null}

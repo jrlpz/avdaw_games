@@ -22,7 +22,7 @@ interface Friend {
 
 
 export async function recuperarUsuario(email: string, username: string) {
-    const supabase = await createClient();  // Crear cliente dentro de la función
+    const supabase = await createClient();  
     try {
         const { data: usuario, error } = await supabase
             .from('usuarios')
@@ -95,9 +95,7 @@ export async function getRankingUsers(): Promise<UserStats[]> {
         const win_rate = partidas_jugadas > 0 ? (victorias / partidas_jugadas) * 100 : 0;
         
         // Calculamos un score de ranking que combina win rate y número de partidas
-        // Fórmula: score = win_rate * factor_confianza
-        // donde factor_confianza es una función que aumenta con más partidas pero se satura
-        const factor_confianza = 1 - Math.exp(-partidas_jugadas / 10); // Ajusta el 10 para cambiar la velocidad
+        const factor_confianza = 1 - Math.exp(-partidas_jugadas / 10);
         const ranking_score = win_rate * factor_confianza;
 
         return {
@@ -180,7 +178,6 @@ export async function obtenerAmigos(usuarioId: string) {
   }
 }
 
-// actions.ts - Añadir esta nueva función
 export async function quitarAmigo(usuarioActualId: string, amigoId: string) {
   const supabase = await createClient();
   

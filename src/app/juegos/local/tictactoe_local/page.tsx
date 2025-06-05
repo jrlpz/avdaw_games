@@ -11,13 +11,8 @@ import Confetti from 'react-confetti'
 export default function TicTacToe() {
 
 
-    // Tablero
     const [board, setBoard] = useState<Array<string | null>>(Array(9).fill(null));
-
-    // Turno
     const [isNext, setIsNext] = useState(true);
-
-    // Ganador
     const calculateWinner = (squares: Array<string | null>) => {
         const lines = [
             [0, 1, 2],
@@ -41,28 +36,14 @@ export default function TicTacToe() {
     };
 
     const winner = calculateWinner(board);
-   const { width, height } = useWindowSize();  // Get window size using react-use hook
-
-    // Verificar si el juego ha terminado en empate
+    const { width, height } = useWindowSize();  
     const isBoardFull = board.every(cell => cell !== null);
     const isDraw = !winner && isBoardFull;
-
-    // Otros
-
     const handleClick = (index: number) => {
-        // Si ya hay un ganador o el cuadro ya está lleno, no permite más movimientos
         if (board[index] || winner) return;
-
-        // Crea una copia del estado actual del tablero
         const newBoard = board.slice();
-
-        // Asigna 'X' o 'O' en la posición clickeada, dependiendo de quién tiene el turno
         newBoard[index] = isNext ? 'X' : 'O';
-
-        // Actualiza el estado del tablero con el nuevo movimiento
         setBoard(newBoard);
-
-        // Cambia el turno de X a O y viceversa
         setIsNext(!isNext);
     };
 
@@ -75,7 +56,6 @@ export default function TicTacToe() {
 
         <div> 
             {
-             //Confetti si hay ganador
             winner && (
             <Confetti
                 width={width}
@@ -87,12 +67,8 @@ export default function TicTacToe() {
 
             <div className="flex flex-col items-center space-y-4 p-4">
                 <div className="flex items-center space-x-2">
-
-
-
                     <h1 className="text-3xl font-bold">Tic Tac Toe</h1>
                     <GiTicTacToe className="text-3xl" />
-
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                     {board.map((value, index) => (
@@ -102,7 +78,7 @@ export default function TicTacToe() {
                             onClick={() => handleClick(index)}
                         >
                             {value === 'X' ? <FaTimes className="text-red-500 text-3xl" /> :
-                                value === 'O' ? <FaRegCircle className="text-blue-500 text-3xl" /> : null}
+                             value === 'O' ? <FaRegCircle className="text-blue-500 text-3xl" /> : null}
                         </button>
                     ))}
                 </div>

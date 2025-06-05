@@ -14,7 +14,7 @@ export default async function RankingPage() {
 
   try {
     const rankingData = await getRankingUsers();
-  console.log('Ranking Data:', rankingData);
+  console.log('Datos Ranking:', rankingData);
     return (
       <div className='bg-gray-100'>
         <RankingClient rankingData={rankingData} currentUser={session.username} currentUserId={String(session.userId)} />

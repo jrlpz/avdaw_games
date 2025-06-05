@@ -16,7 +16,7 @@ export interface FriendDetails extends Friend {
   favorito?: string;
 }
 export async function recuperarUsuario(email: string, username: string) {
-    const supabase = await createClient();  // Crear cliente dentro de la función
+    const supabase = await createClient(); 
     try {
         const { data: usuario, error } = await supabase
             .from('usuarios')
@@ -38,7 +38,7 @@ export async function recuperarUsuario(email: string, username: string) {
 
 
 export async function calcularEstadisticas(name: string) {
-    const supabase = await createClient();  // Crear cliente dentro de la función
+    const supabase = await createClient();
     try {
         const { data: results, error } = await supabase
             .from('results')
@@ -107,16 +107,13 @@ export async function guardarDatos(
     if (error) throw error;
     
     console.log('Datos guardados en Supabase:', data);
-
-      // Get the current session data
       const currentSession = await getCurrentSession();
       console.log('currentSesion', currentSession)
       if (!currentSession) {
         console.warn('No se pudo obtener la sesión actual.');
-        return data; // Or throw an error if you require an active session
+        return data; 
       }
 
-      // Update the session with the new username.  Keep userId and email same
       await createSession(currentSession.userId.toString(), currentSession.email, username);
     
     return data;
@@ -152,7 +149,7 @@ export async function uploadAvatar(email: string, file: File) {
   const supabase = await createClient();
   
   try {
-    // 1. Validaciones del archivo
+
     const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     const fileExt = file.name.split('.').pop()?.toLowerCase();
     
@@ -164,13 +161,12 @@ export async function uploadAvatar(email: string, file: File) {
       throw new Error('La imagen no puede ser mayor a 2MB');
     }
 
-    // 2. Generar nombre único para el archivo
     const timestamp = Date.now();
     const safeEmail = email.replace(/[^a-zA-Z0-9]/g, '-');
     const fileName = `avatar-${safeEmail}-${timestamp}.${fileExt}`;
     const filePath = `avatars/${safeEmail}/${fileName}`;
 
-    // 3. Subir el archivo a Supabase Storage
+
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('avatars')
@@ -182,13 +178,12 @@ export async function uploadAvatar(email: string, file: File) {
 
     if (uploadError) throw uploadError;
 
-    // 4. Obtener URL pública
+
     const { data: publicUrlData } = supabase
       .storage
       .from('avatars')
       .getPublicUrl(filePath);
 
-    // 5. Actualizar referencia en la tabla de usuarios
     const { data: userData, error: userError } = await supabase
       .from('usuarios')
       .update({ 
@@ -201,7 +196,7 @@ export async function uploadAvatar(email: string, file: File) {
 
     if (userError) throw userError;
 
-    // 6. Actualizar sesión
+
     const session = await getCurrentSession();
     if (session) {
       await supabase.auth.updateUser({
@@ -236,7 +231,7 @@ export async function deletePreviousAvatar(avatarPath: string) {
   const supabase = await createClient();
   
   try {
-    // Extraer el path relativo
+
     const relativePath = avatarPath.startsWith('avatars/') 
       ? avatarPath 
       : avatarPath.split('/avatars/')[1] || avatarPath;
@@ -264,7 +259,7 @@ export async function obtenerDetallesAmigo(amigoId: string, amigoUsername: strin
   const supabase = await createClient();
   
   try {
-    // Obtener estadísticas del amigo
+   
     const { data: estadisticas } = await supabase
       .from('results')
       .select('result')
@@ -277,7 +272,7 @@ export async function obtenerDetallesAmigo(amigoId: string, amigoUsername: strin
       else if (result === -1) derrotas++;
     });
 
-    // Obtener información del perfil del amigo
+
     const { data: perfil } = await supabase
       .from('usuarios')
       .select('username, avatar, descripcion, favorito')
@@ -304,17 +299,16 @@ export async function obtenerAmigosConAvatares(usuarioId: string): Promise<Frien
   const supabase = await createClient();
   
   try {
-    // 1. Obtener la lista de IDs de amigos
+
     const { data: usuario, error: userError } = await supabase
       .from('usuarios')
       .select('amigos')
-      .in('id', [usuarioId]) // Cambiado a .in para buscar por ID dentro de un array
+      .in('id', [usuarioId]) 
       .single();
 
     if (userError) throw userError;
     if (!usuario?.amigos?.length) return [];
 
-    // 2. Obtener información completa de cada amigo
     const amigosIds = usuario.amigos.map((a: {id: string}) => a.id);
     
     const { data: amigosData, error: amigosError } = await supabase
@@ -324,9 +318,9 @@ export async function obtenerAmigosConAvatares(usuarioId: string): Promise<Frien
 
     if (amigosError) throw amigosError;
 
-    console.log('amigosData', amigosData); // Asegúrate de revisar los datos obtenidos aquí
+    console.log('amigosData', amigosData); 
 
-    // Mapeo de datos para retornar
+
     return amigosData?.map(amigo => ({
       id: amigo.id,
       username: amigo.username,
@@ -342,7 +336,7 @@ export async function quitarAmigo(usuarioId: string, amigoId: string) {
   const supabase = await createClient();
   
   try {
-    // 1. Obtener el usuario actual
+
     const { data: usuario, error: userError } = await supabase
       .from('usuarios')
       .select('amigos')
@@ -352,16 +346,15 @@ export async function quitarAmigo(usuarioId: string, amigoId: string) {
     if (userError) throw userError;
     if (!usuario) throw new Error('Usuario no encontrado');
 
-    // 2. Filtrar la lista de amigos para quitar el amigo especificado
+
     const amigosActuales: Friend[] = usuario.amigos || [];
     const nuevosAmigos = amigosActuales.filter(a => a.id !== amigoId);
 
-    // 3. Verificar si realmente existía el amigo
+
     if (amigosActuales.length === nuevosAmigos.length) {
       return { success: false, message: 'Este usuario no estaba en tu lista de amigos' };
     }
 
-    // 4. Actualizar la lista de amigos
     const { error: updateError } = await supabase
       .from('usuarios')
       .update({ amigos: nuevosAmigos })
@@ -376,13 +369,13 @@ export async function quitarAmigo(usuarioId: string, amigoId: string) {
   }
 }
 
-//-------------
+
 
 export async function buscarUsuarios(terminoBusqueda: string, usuarioActualId: string): Promise<Friend[]> {
   const supabase = await createClient();
   
   try {
-    // Buscar usuarios que coincidan con el término (excluyendo al usuario actual)
+ 
     const { data: usuarios, error } = await supabase
       .from('usuarios')
       .select('id, username, avatar')
@@ -403,7 +396,7 @@ export async function agregarAmigo(usuarioId: string, amigoId: string, amigoUser
   const supabase = await createClient();
   
   try {
-    // 1. Obtener información del amigo (incluyendo avatar)
+
     const { data: amigoData, error: amigoError } = await supabase
       .from('usuarios')
       .select('id, username, avatar')
@@ -413,7 +406,7 @@ export async function agregarAmigo(usuarioId: string, amigoId: string, amigoUser
     if (amigoError) throw amigoError;
     if (!amigoData) throw new Error('Usuario amigo no encontrado');
 
-    // 2. Obtener el usuario actual
+ 
     const { data: usuario, error: userError } = await supabase
       .from('usuarios')
       .select('amigos')
@@ -423,7 +416,7 @@ export async function agregarAmigo(usuarioId: string, amigoId: string, amigoUser
     if (userError) throw userError;
     if (!usuario) throw new Error('Usuario no encontrado');
 
-    // 3. Verificar si ya son amigos
+   
     const amigosActuales: Friend[] = usuario.amigos || [];
     const yaEsAmigo = amigosActuales.some(a => a.id === amigoId);
     
@@ -431,7 +424,7 @@ export async function agregarAmigo(usuarioId: string, amigoId: string, amigoUser
       return { success: false, message: 'Ya es tu amigo' };
     }
 
-    // 4. Añadir el nuevo amigo con su avatar
+
     const nuevoAmigo: Friend = { 
       id: amigoData.id, 
       username: amigoData.username, 
@@ -439,7 +432,7 @@ export async function agregarAmigo(usuarioId: string, amigoId: string, amigoUser
     };
     const nuevosAmigos = [...amigosActuales, nuevoAmigo];
 
-    // 5. Actualizar la lista de amigos
+
     const { error: updateError } = await supabase
       .from('usuarios')
       .update({ amigos: nuevosAmigos })
@@ -450,7 +443,7 @@ export async function agregarAmigo(usuarioId: string, amigoId: string, amigoUser
       success: true, 
       message: 'Amigo agregado correctamente', 
       amigo: nuevoAmigo,
-      nuevosAmigos // ← Añade esto para que el cliente sepa la lista actualizada
+      nuevosAmigos 
     };
   } catch (error) {
     console.error('Error al agregar amigo:', error);

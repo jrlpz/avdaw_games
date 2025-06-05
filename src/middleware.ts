@@ -1,4 +1,3 @@
-// middleware.js
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
@@ -13,7 +12,7 @@ async function decrypt(session: string | undefined = '') {
     });
     return payload;
   } catch (error) {
-    console.log("Error decrypting session:", error);
+    console.log("Error al desencriptar la sesión:", error);
     return null;
   }
 }
@@ -21,7 +20,7 @@ async function decrypt(session: string | undefined = '') {
 export async function middleware(request:NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Rutas que requieren autenticación
+
   const protectedRoutes = ['/juegos/multiplayer/tictactoe'];
 
   if (protectedRoutes.includes(pathname)) {
@@ -29,28 +28,27 @@ export async function middleware(request:NextRequest) {
     const session = sessionCookie?.value;
 
     if (!session) {
-      console.log("No session cookie found, redirecting to /login");
+      console.log("No se ha encontrado coolie de sesión, redirigiendo a /login");
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
     try {
-      // Decrypt the session cookie
+
       const payload = await decrypt(session);
 
       if (!payload || !payload.userId) {
-        console.log("Invalid session payload, redirecting to /login");
+        console.log("Contenido de la sesion no válido, redirigiendo a /login");
         return NextResponse.redirect(new URL('/login', request.url));
       }
 
-      console.log("Session is valid, user ID:", payload.userId);
-      return NextResponse.next(); // If session is valid, continue
+      return NextResponse.next(); 
     } catch (error) {
-      console.error("Error decrypting or verifying session:", error);
-      return NextResponse.redirect(new URL('/login', request.url)); // If decryption fails, redirect to login
+      console.error("Error al desencriptar o verificar la sesión:", error);
+      return NextResponse.redirect(new URL('/login', request.url)); 
     }
   }
 
-  // Permitir el acceso a las rutas no protegidas
+
   return NextResponse.next();
 }
 

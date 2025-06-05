@@ -3,54 +3,10 @@ import './HomePage.css';
 import Image from 'next/image';
 import Link from 'next/link';
 import { VscTriangleDown } from "react-icons/vsc";
-import {getGamesFromDatabase} from '@/app/actions'; // Asegúrate de que la ruta sea correcta
+import {getGamesFromDatabase} from '@/app/actions';
 
 export default async function HomePage() {
   const { singlePlayer, multiPlayer } = await getGamesFromDatabase();
-
-//---Datos locales
-  // const minijuegosSinglePlayer = [
-  //   {
-  //     id: 'tictactoe',
-  //     nombre: 'TicTacToe',
-  //     descripcion: 'El clásico 3 en raya contra la máquina',
-  //     imagen: '/images/tictactoe.png',
-  //     modo: 'single'
-  //   },
-  //   {
-  //     id: 'words',
-  //     nombre: 'Words',
-  //     descripcion: 'Adivina la palabra en modo individual',
-  //     imagen: '/images/words.png',
-  //     modo: 'single'
-  //   },
-  // ];
-
-  // const minijuegosMultiPlayer = [
-  //   // TicTacToe Multijugador Online (este enlazará a /juegos/multiplayer/tictactoe)
-  //   {
-  //     id: 'tictactoe',
-  //     nombre: 'TicTacToe (2J - Online)',
-  //     descripcion: 'El clásico 3 en raya, juega con amigos online.',
-  //     imagen: '/images/tictactoe2.png',
-  //     modo: 'multi',
-  //     pathPrefix: '/juegos/multiplayer'
-  //   },
-
-  //   // TicTacToe Multijugador Local (este enlazará a /juegos/local/tictactoe-local)
-  //   {
-  //     id: 'tictactoe_local',
-  //     nombre: 'TicTacToe (2J - Local)',
-  //     descripcion: 'El clásico 3 en raya, juega con amigos localmente.',
-  //     imagen: '/images/tictactoe3.png',
-  //     modo: 'multi',
-  //     pathPrefix: '/juegos/local'
-  //   },
-
-
-  // ];
-//--------------------------------------------
-
   return (
     <div className="home-page">
       <div className="text-center mb-12 mt-10">

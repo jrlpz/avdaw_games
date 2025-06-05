@@ -11,7 +11,7 @@ export const generateCards = (): Pick<
       value: Math.floor(Math.random() * 100),
     })
   }
-  const numOfInputs = 3 // Math.floor(Math.random() * 2) + 3, 4 seems to be too hard
+  const numOfInputs = 3
   const possibleResults = []
 
   for (let i = 0; i < 5; i++) {

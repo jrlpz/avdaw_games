@@ -1,5 +1,5 @@
 // components/PrivacyPolicy.tsx
-'use client'; // Indica que este es un componente del cliente en Next.js
+'use client';
 
 import React from 'react';
 

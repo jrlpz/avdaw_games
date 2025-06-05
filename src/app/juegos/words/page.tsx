@@ -177,8 +177,8 @@ const WordleGame = ()=> {
                             ? 'px-5 py-4 text-2xl  enter-button-movil'
                             : ''
                         }
-                        ${key === '⌫' && isMobile // Agrega esta condición
-                            ? 'px-4 py-2 text-lg delete-button-movil' // Aplica la clase
+                        ${key === '⌫' && isMobile 
+                            ? 'px-4 py-2 text-lg delete-button-movil' 
                             : ''
                         }`}
                     onClick={() => handleVirtualKeyPress(key)}

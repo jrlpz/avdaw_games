@@ -47,15 +47,10 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
   const [amigoDetalles, setAmigoDetalles] = useState<FriendDetails | null>(null);
   const [loadingDetalles, setLoadingDetalles] = useState(false);
   const [loadingAmigos, setLoadingAmigos] = useState<Record<string, boolean>>({});
-
-
-  // Nuevos estados para la búsqueda
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [resultadosBusqueda, setResultadosBusqueda] = useState<Friend[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [agregandoAmigo, setAgregandoAmigo] = useState<Record<string, boolean>>({});
-
-
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,9 +79,9 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
 
     cargarAmigos();
 
-    // 2. Suscripción a cambios en tiempo real
+    // 2. Suscripción a cambios en tiempo real. Canal único por usuario.
     const channel = supabase
-      .channel(`amigos_${userData.currentUserId}`) // Canal único por usuario
+      .channel(`amigos_${userData.currentUserId}`) 
       .on(
         'postgres_changes',
         {
@@ -102,7 +97,7 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel); // Limpieza al desmontar
+      supabase.removeChannel(channel);
     };
   }, [userData.currentUserId]);
 
@@ -143,6 +138,7 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
     }
   };
 
+  //Para manejar cambio de imagen de perfil
   const handleAvatarClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -295,7 +291,6 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
       setAmigoDetalles(data);
     } catch (error) {
       console.error('Error al obtener detalles del amigo:', error);
-      // Mostrar solo la información básica si falla la consulta
       setAmigoDetalles(amigo);
     } finally {
       setLoadingDetalles(false);
@@ -324,7 +319,8 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
       setTimeout(() => setSuccessMessage(null), 3000);
     }
   };
-  // Función para buscar usuarios
+
+
   const handleBuscarUsuarios = async () => {
     if (!terminoBusqueda.trim()) {
       setResultadosBusqueda([]);
@@ -343,7 +339,6 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
     }
   };
 
-  // Función para agregar amigo
   const handleAgregarAmigo = async (amigo: Friend) => {
     setAgregandoAmigo(prev => ({ ...prev, [amigo.id]: true }));
     try {
@@ -356,7 +351,6 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
       if (resultado.success && resultado.amigo) {
         setAmigos(prev => [...prev, resultado.amigo!]);
         setSuccessMessage(`¡${amigo.username} agregado a tus amigos!`);
-        // Limpiar resultados de búsqueda
         setResultadosBusqueda([]);
         setTerminoBusqueda('');
       } else {
@@ -462,7 +456,7 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
 
 
 
-            {/* Sección de Lista de Amigos - Actualizada con búsqueda */}
+            {/* Sección de Lista de Amigos con barra de búsqueda */}
       <div className="flex-1 rounded-2xl overflow-hidden shadow-lg bg-white dark:bg-navy-800 p-4">
         <h3 className="text-lg font-bold text-navy-700 dark:text-white mb-4">
           Lista de amigos ({amigos.length})

@@ -116,7 +116,6 @@ export default function Registro() {
                 state?.errors?.password ? 'border border-red-500' : ''
               }`}
               placeholder="Introduce la contraseña"
-              // No value/onChange needed if uncontrolled
             />
             {state?.errors?.password && (
               <p className="mt-1 text-sm text-red-500">
@@ -125,7 +124,7 @@ export default function Registro() {
             )}
           </div>
 
-          {/* Campo Confirm Password  */}
+          {/* Campo Reperit Password  */}
           <div>
             <label className="text-slate-800 text-sm font-medium mb-2 block">Repetir contraseña</label>
             <input
