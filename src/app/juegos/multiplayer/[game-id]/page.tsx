@@ -219,20 +219,12 @@ export default function TicTacToe() {
       [0, 4, 8], [2, 4, 6] // diagonales
     ];
 
-
-// Mapea los valores del tablero a sus símbolos para la verificación:
-// 1 corresponde a X
-// 2 corresponde a O
     const boardSymbols = board.map(cell => cell === 1 ? 'X' : cell === 2 ? 'O' : null);
 
     for (const [a, b, c] of lines) {
       if (boardSymbols[a] && boardSymbols[a] === boardSymbols[b] && boardSymbols[a] === boardSymbols[c]) {
         const winningSymbol = boardSymbols[a];
-
-        // Buscar al jugador con ese símbolo en la lista de usuarios actuales (derivada de roomData).
         const winnerPlayer = users.find(user => user.symbol === winningSymbol);
-
-        // Devuelve el ganador o empate
         return winnerPlayer ? winnerPlayer.name : null;
       }
     }
@@ -256,22 +248,14 @@ export default function TicTacToe() {
       return;
     }
 
-    // Determinar el valor a colocar en el tablero (1 para X, 2 para O).
     const cellValue = playerSymbol === 'X' ? 1 : 2;
-
     const newBoard = [...gameState.board];
     newBoard[index] = cellValue;
     const newWinner = checkWinner(newBoard);
-
-    // Determina el siguiente jugador 
     const currentPlayerAssigned = users.find(u => u.name === currentUser); 
     const newNextPlayer = users.find(u => u.name !== currentPlayerAssigned?.name)?.name || null; 
-
-
     const supabase = createClient();
-
-    // Actualiza el estado en la base de datos
-    console.log('Updating game state:', { board: newBoard, next_player: newNextPlayer, winner: newWinner });
+    console.log('Actualizando estado de la partida:', { board: newBoard, next_player: newNextPlayer, winner: newWinner });
     const { error: gameError } = await supabase
       .from('rooms')
       .update({
@@ -313,7 +297,6 @@ export default function TicTacToe() {
         });
 
         console.log('Upserting results:', updates);
-        // LLeva a cabo el upsert de resultados
         const { error: resultsError } = await supabase
           .from('results')
           .upsert(updates);
@@ -327,7 +310,7 @@ export default function TicTacToe() {
     }
   };
 
-  const isCurrentTurn = currentUser === gameState.nextPlayer && !gameState.winner && gameReady; // Ensure game is ready
+  const isCurrentTurn = currentUser === gameState.nextPlayer && !gameState.winner && gameReady;
 
   // 8. Lógica de visualización de valores en el tablero
   const displayValue = (cell: number) => {
@@ -468,7 +451,7 @@ export default function TicTacToe() {
                           alt={`Avatar de ${nextPlayerUser.name}`}
                           className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border border-gray-300"
                         />
-                      ) : nextPlayerUser ? ( // Show initial if no avatar
+                      ) : nextPlayerUser ? ( 
                         <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-400 flex items-center justify-center text-white text-sm font-bold">
                           {nextPlayerUser.name.charAt(0).toUpperCase()}
                         </div>
@@ -504,7 +487,7 @@ export default function TicTacToe() {
             <div className="py-2 bg-purple-950 text-white rounded-lg shadow-lg flex items-center p-2 sm:p-3 font-bold gap-2 w-fit">
               <span className="text-sm sm:text-base">Código: {roomName}</span>
               <button
-                className="p-1 sm:p-2 rounded-lg shadow-lg hover:bg-gray-100 transition duration-100 text-white hover:text-gray-700"
+                className="p-1 sm:p-2 rounded-lg shadow-lg cursor-pointer hover:bg-gray-100 transition duration-100 text-white hover:text-gray-700"
                 onClick={() => navigator.clipboard.writeText(roomName)}
                 aria-label="Copiar código de sala"
               >

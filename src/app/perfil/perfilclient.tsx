@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AiOutlineClose } from "react-icons/ai";
 import { guardarDatos, actualizarContraseña, uploadAvatar, deletePreviousAvatar, Friend, FriendDetails, obtenerDetallesAmigo } from './actions';
 import { CurrentUserAvatar } from '@/components/current-user-avatar'
-
+import { FaPencilAlt } from "react-icons/fa";
 import Image from 'next/image';
 import { ProfileFormSchema } from '@/app/auth/definitions';
 import { obtenerAmigosConAvatares, quitarAmigo, buscarUsuarios, agregarAmigo } from './actions';
@@ -389,11 +389,15 @@ useEffect(() => {
               height={200}
             />
 
-            <div
+       <div
               className="absolute -top-12 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-pink-100 dark:border-navy-700 cursor-pointer hover:opacity-90 transition-opacity"
               onClick={handleAvatarClick}
               title="Cambiar avatar"
             >
+  {/* Icono de lápiz en esquina inferior derecha */}
+  <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 transform translate-x-1 translate-y-1 z-10">
+    <FaPencilAlt className="text-white text-xs" />
+  </div>
               {isUploading ? (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>

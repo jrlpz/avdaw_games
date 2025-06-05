@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { GiTicTacToe } from "react-icons/gi";
 
 
 export const metadata: Metadata = {
@@ -17,15 +18,12 @@ export default function TicTacToeLayout({
         <div className="z-10 md:max-w-5xl w-full items-center font-mono text-sm flex justify-center">
           <div className="flex flex-col items-center justify-center">
             <h1 className="text-4xl font-bold text-center">
-              Sala de espera <span className="text-blue-500">T</span>
-              <span className="text-red-500">i</span>
-              <span className="text-yellow-500">c</span>
-              <span className="text-blue-500"> T</span>
-              <span className="text-green-500">a</span>
-              <span className="text-red-500">c</span>
-              <span className="text-blue-500"> T</span>
-              <span className="text-red-500">o</span>
-              <span className="text-green-500">e</span>
+             
+              
+               <div className="flex items-center  text-purple-950">
+                    <h1 className="text-3xl font-bold"> Sala de espera  Tic Tac Toe</h1>
+                    <GiTicTacToe className="text-3xl" />
+                </div>
             </h1>
             <p className="text-center my-2">
               Crea una sala y comparte el enlace con tus amigos.
