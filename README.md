@@ -25,7 +25,7 @@ git clone https://github.com/jrlpz/avdaw_games.git
   npm install
 - Para mas información puedes visitar la [Guía de instalación de Node y npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm#checking-your-version-of-npm-and-nodejs)
 - Si se te han proporcionado un archvo env con las claves copialo en el directorio raiz de la aplicacion:
-FOTO
+![image](https://github.com/user-attachments/assets/37efd2a7-bcdc-4f67-a89d-38e77a36e41e)
 - Si no se te ha proporcionado el archivo .env puedes probar la aplicacion utilizando visitando el apartado "Demo en vivo"
 
 ## Crédito y Agradecimientos
