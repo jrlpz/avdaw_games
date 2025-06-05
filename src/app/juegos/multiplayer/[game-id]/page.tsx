@@ -95,7 +95,7 @@ export default function TicTacToe() {
     const supabase = createClient();
     const channel = supabase.channel(`room:${roomName}`);
     const handleGameUpdate = (payload: { new: RoomData }) => {
-      console.log('Realtime UPDATE received:', payload.new);
+      console.log('Recibido Realtime UPDATE:', payload.new);
       setRoomData(payload.new); 
      
     };
@@ -103,7 +103,7 @@ export default function TicTacToe() {
     // Para sincronia de presencia
     const handlePresenceSync = async () => {
        const presenceState = channel.presenceState() as PresenceState;
-       console.log('Presence sync state:', presenceState);
+       console.log('Sincronización de presencia:', presenceState);
 
     };
 
@@ -144,7 +144,7 @@ export default function TicTacToe() {
   useEffect(() => {
     if (!roomData) return;
 
-    console.log('roomData updated in effect:', roomData);
+    console.log('roomData actualizado en efecto:', roomData);
 
     // Actualizar gameState con los datos de roomData
     setGameState({
@@ -176,7 +176,7 @@ export default function TicTacToe() {
     // Determina si la partida puede emepzar
     const ready = !!roomData.player1 && !!roomData.player2;
     setGameReady(ready);
-    console.log('Game ready status:', ready);
+    console.log('Estado de juego:', ready);
 
     // Utiliza roomData para asignar los simbolos de los jugadores
     if (currentUser) {
@@ -191,9 +191,9 @@ export default function TicTacToe() {
     if (ready && roomData.next_player === null) {
       const supabase = createClient();
       // Start with player1 from roomData
-      console.log('Setting initial next player to:', roomData.player1);
+      console.log('Asignando next player a:', roomData.player1);
       supabase.from('rooms').update({ next_player: roomData.player1 }).eq('room_name', roomName).then(({ error }) => {
-        if (error) console.error('Error setting initial next player:', error);
+        if (error) console.error('Error al asignar siguiente next player:', error);
       });
     }
 
@@ -244,7 +244,7 @@ export default function TicTacToe() {
       !gameReady || 
       !playerSymbol 
     ) {
-      console.log('Move not allowed:', { currentUser, cellValue: gameState.board[index], winner: gameState.winner, isTurn: currentUser === gameState.nextPlayer, gameReady, playerSymbol });
+      console.log('Movimiento no permitido:', { currentUser, cellValue: gameState.board[index], winner: gameState.winner, isTurn: currentUser === gameState.nextPlayer, gameReady, playerSymbol });
       return;
     }
 
