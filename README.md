@@ -45,7 +45,8 @@ git clone https://github.com/jrlpz/avdaw_games.git
 * **Chat:** [Supabase UI Docs - Realtime Chat para Next.js](https://supabase.com/ui/docs/nextjs/realtime-chat)
 * **Avatar:** [Current User Avatar](supabase.com/ui/docs/nextjs/current-user-avatar)
 * **Cursores:** [Realtime Cursor](https://supabase.com/ui/docs/nextjs/realtime-cursor)
-
+* **Despliegue:** [Desplegar en Vercel](https://vercel.com/docs/deployments)
+  
 ### Herramientas Adicionales
 * **Generador de IDs:** [npm - unique-names-generator](https://www.npmjs.com/package/unique-names-generator)
 * **Iconos:** [React Icons](https://react-icons.github.io/react-icons)
