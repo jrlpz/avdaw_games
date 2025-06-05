@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AiOutlineClose } from "react-icons/ai";
 import { guardarDatos, actualizarContraseña, uploadAvatar, deletePreviousAvatar, Friend, FriendDetails, obtenerDetallesAmigo } from './actions';
-import { CurrentProfileAvatar } from '@/components/current-profile-avatar';
+import { CurrentUserAvatar } from '@/components/current-user-avatar'
+
 import Image from 'next/image';
 import { ProfileFormSchema } from '@/app/auth/definitions';
 import { obtenerAmigosConAvatares, quitarAmigo, buscarUsuarios, agregarAmigo } from './actions';
@@ -71,35 +72,37 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
   }, [formData, initialUserData]);
 
 
- useEffect(() => {
-    const cargarAmigos = async () => {
-      const listaAmigos = await obtenerAmigosConAvatares(userData.currentUserId);
-      setAmigos(listaAmigos);
-    };
+useEffect(() => {
+  const cargarAmigos = async () => {
+    const listaAmigos = await obtenerAmigosConAvatares(userData.currentUserId);
+    setAmigos(listaAmigos);
+  };
 
-    cargarAmigos();
+  cargarAmigos();
 
-    // 2. Suscripción a cambios en tiempo real. Canal único por usuario.
-    const channel = supabase
-      .channel(`amigos_${userData.currentUserId}`) 
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'usuarios',
-          filter: `id=eq.${userData.currentUserId}`,
-        },
-        (payload) => {
-          setAmigos(payload.new.amigos || []);
+ 
+  const channel = supabase
+    .channel(`amigos_${userData.currentUserId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'usuarios',
+      },
+      (payload) => {
+        if ((payload.new as { id: string }).id === userData.currentUserId || 
+            amigos.some(a => a.id === (payload.new as { id: string }).id)) {
+          cargarAmigos(); 
         }
-      )
-      .subscribe();
+      }
+    )
+    .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userData.currentUserId]);
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [userData.currentUserId]);
 
   const handleQuitarAmigo = async (amigoId: string) => {
     try {
@@ -138,59 +141,56 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
     }
   };
 
-  //Para manejar cambio de imagen de perfil
+
   const handleAvatarClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+ const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    setIsUploading(true);
-    setFormErrors({});
+  setIsUploading(true);
+  setFormErrors({});
 
-    try {
-      // Verificación básica del archivo
-      if (!file.type.startsWith('image/')) {
-        throw new Error('Solo se permiten imágenes (JPEG, PNG, GIF)');
-      }
+  try {
 
-      if (file.size > 2 * 1024 * 1024) {
-        throw new Error('La imagen no puede exceder 2MB');
-      }
-
-      // Subir el archivo
-      const result = await uploadAvatar(userData.email, file);
-
-      interface UploadResult {
-        success: boolean;
-        error?: string;
-      }
-
-      if (!result.success) {
-        throw new Error((result as UploadResult).error || 'Error al guardar el avatar');
-      }
-
-      // Actualizar estado
-      setUserData(prev => ({
-        ...prev,
-        avatar: result.avatarUrl
-      }));
-
-      setSuccessMessage('Avatar actualizado correctamente');
-
-    } catch (error) {
-      setFormErrors({
-        message: error instanceof Error ?
-          (error as Error).message : JSON.stringify(error)
-      });
-    } finally {
-      setIsUploading(false);
+    if (!file.type.startsWith('image/')) {
+      throw new Error('Solo se permiten imágenes (JPEG, PNG, GIF)');
     }
-  };
+
+    if (file.size > 2 * 1024 * 1024) {
+      throw new Error('La imagen no puede exceder 2MB');
+    }
+
+    const result = await uploadAvatar(userData.email, file);
+
+    if (!result.success) {
+      throw new Error(result.error || 'Error al guardar el avatar');
+    }
+
+  
+    setUserData(prev => ({
+      ...prev,
+      avatar: result.avatarUrl
+    }));
+
+
+    const listaAmigosActualizada = await obtenerAmigosConAvatares(userData.currentUserId);
+    setAmigos(listaAmigosActualizada);
+
+    setSuccessMessage('Avatar actualizado correctamente');
+
+  } catch (error) {
+    setFormErrors({
+      message: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  } finally {
+    setIsUploading(false);
+  }
+};
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -279,7 +279,7 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
       setFormErrors({ message: errorMessage });
     }
   };
- // Función para ver detalles del amigo
+
   const handleVerDetallesAmigo = async (amigo: Friend) => {
     setLoadingDetalles(true);
     try {
@@ -297,7 +297,7 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
     }
   };
 
-  // Función para confirmar eliminación
+  
   const confirmarQuitarAmigo = async () => {
     if (!amigoAEliminar) return;
     
@@ -417,7 +417,9 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
                   alt="Avatar del usuario"
                 />
               ) : (
-                <CurrentProfileAvatar className="h-full w-full rounded-full object-cover" />
+            
+                    <CurrentUserAvatar key={Date.now()}/>
+
               )}
               
             </div>
@@ -543,31 +545,32 @@ export default function PerfilClient({ userData: initialUserData }: { userData: 
           </div>
         ) : (
           <div className="space-y-3 max-h-[300px] overflow-y-auto">
-            {amigos.map((amigo) => (
-              <div
-                key={amigo.id}
-                className="flex items-center justify-between gap-3 p-2 hover:bg-gray-100 dark:hover:bg-navy-700 rounded-lg transition-colors"
-              >
-                <div 
-                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
-                  onClick={() => handleVerDetallesAmigo(amigo)}
-                >
-                  <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
-                    {amigo.avatar ? (
-                      <Image
-                        src={amigo.avatar}
-                        alt={`Avatar de ${amigo.username}`}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="h-full w-full bg-gray-300 dark:bg-navy-600 flex items-center justify-center">
-                        <span className="text-xs font-medium">
-                          {amigo.username.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+           {amigos.map((amigo) => (
+  <div
+    key={amigo.id}
+    className="flex items-center justify-between gap-3 p-2 hover:bg-gray-100 dark:hover:bg-navy-700 rounded-lg transition-colors"
+  >
+    <div 
+      className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+      onClick={() => handleVerDetallesAmigo(amigo)}
+    >
+      <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
+        {amigo.avatar ? (
+          <Image
+            src={`${amigo.avatar}?${Date.now()}`} 
+            alt={`Avatar de ${amigo.username}`}
+            fill
+            className="object-cover"
+            key={amigo.avatar} 
+          />
+        ) : (
+          <div className="h-full w-full bg-gray-300 dark:bg-navy-600 flex items-center justify-center">
+            <span className="text-xs font-medium">
+              {amigo.username.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
+      </div>
                   <div className="min-w-0">
                     <p className="font-medium text-navy-700 dark:text-white truncate">
                       {amigo.username}

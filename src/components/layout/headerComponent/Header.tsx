@@ -176,7 +176,7 @@ const Header = ({ userData }: { userData: UserData | null }) => {
         onClick={handlePerfil}
       >
         <div className="text-gray-400">
-          <CurrentUserAvatar />
+          <CurrentUserAvatar key={Date.now()}/>
         </div>
 
         {/* Tooltip a la izquierda del avatar */}
