@@ -29,7 +29,7 @@ git clone https://github.com/jrlpz/avdaw_games.git
   - Puedes ejecutar la aplicación con el siguiente comando:
    ```sh
   npm run dev
-- Si no se te ha proporcionado el archivo .env puedes probar la aplicacion utilizando visitando el apartado "Demo en vivo"
+- Si no se te ha proporcionado el archivo .env puedes probar la aplicacion visitando el apartado "Demo en vivo"
 
 ## Crédito y Agradecimientos
 * **Creación de salas Multijugador:** [Blog de Supabase - Explorando Supabase Realtime al Construir un Juego](https://supabase.com/blog/realtime-game)
