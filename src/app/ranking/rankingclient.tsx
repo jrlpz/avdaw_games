@@ -118,7 +118,7 @@ export default function RankingClient({ rankingData, currentUser, currentUserId 
     }
   };
   return (
-    <div className="min-h-screen bg-white p-4">
+      <div className="min-h-screen bg-white p-4">
       {/* Encabezado */}
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col items-center gap-2 mb-8 mt-6">
@@ -131,33 +131,33 @@ export default function RankingClient({ rankingData, currentUser, currentUserId 
             className="dark:invert"
           />
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold text-navy-700 dark:text-white">Estadísticas</h2>
-            <FaRankingStar className="text-yellow-500 text-xl" />
+            <h2 className="text-xl sm:text-2xl font-bold text-navy-700 dark:text-white">Estadísticas</h2>
+            <FaRankingStar className="text-yellow-500 text-lg sm:text-xl" />
           </div>
         </div>
 
         {/* Contenedor principal */}
-        <div className="bg-gray-100 dark:bg-navy-900 rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-gray-100 dark:bg-navy-900 rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
           {/* Cabecera de ranking */}
-          <div className="p-4 border-b border-gray-200 dark:border-navy-700">
+          <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-navy-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-navy-700 dark:text-white">Top jugadores TicTacToe</h3>
-                <PiRankingDuotone className="text-blue-500 text-xl" />
+                <h3 className="text-base sm:text-lg font-bold text-navy-700 dark:text-white">Top jugadores TicTacToe</h3>
+                <PiRankingDuotone className="text-blue-500 text-lg sm:text-xl" />
               </div>
 
               <button
                 onClick={toggleOrden}
-                className="flex items-center gap-1 px-3 py-1 text-sm rounded-lg bg-gray-100 dark:bg-navy-700 hover:bg-gray-200 dark:hover:bg-navy-600 transition-colors"
+                className="flex items-center gap-1 px-3 py-1 text-xs sm:text-sm rounded-lg bg-gray-100 dark:bg-navy-700 hover:bg-gray-200 dark:hover:bg-navy-600 transition-colors"
               >
                 {orden === 'ascendente' ? (
                   <>
-                    <TbSortAscending className="text-lg" />
+                    <TbSortAscending className="text-base sm:text-lg" />
                     <span>Ascendente</span>
                   </>
                 ) : (
                   <>
-                    <TbSortDescending className="text-lg" />
+                    <TbSortDescending className="text-base sm:text-lg" />
                     <span>Descendente</span>
                   </>
                 )}
@@ -165,20 +165,123 @@ export default function RankingClient({ rankingData, currentUser, currentUserId 
             </div>
           </div>
 
-          {/* Lista de jugadores */}
-          <div className="divide-y divide-gray-200 dark:divide-navy-700">
+          {/* Lista de jugadores - Versión móvil (hidden en desktop) */}
+          <div className="sm:hidden divide-y divide-gray-200 dark:divide-navy-700">
             {sortedRanking.map((user, index) => (
               <div
                 key={user.id}
-                className={`grid grid-cols-12 gap-4 items-center p-4 hover:bg-gray-50 dark:hover:bg-navy-700 transition-colors ${user.username === currentUser ? 'bg-blue-100 dark:bg-navy-800' : ''
-                  }`}
+                className={`p-2 hover:bg-gray-50 dark:hover:bg-navy-700 transition-colors ${
+                  user.username === currentUser ? 'bg-blue-100 dark:bg-navy-800' : ''
+                }`}
               >
-                {/* Posición (1 columna) */}
+                {/* Fila superior móvil */}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="font-bold text-sm w-8 text-center">
+                    {index + 1}º
+                  </div>
+                  
+                  <div className="relative h-8 w-8 rounded-full overflow-hidden flex-shrink-0">
+                    <Image
+                      src={user.avatar || '/images/user.png'}
+                      alt={`Avatar de ${user.username}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium flex items-center gap-1 text-navy-700 dark:text-white truncate text-sm">
+                      {user.username}
+                      {(index + 1) <= 3 && (
+                        orden === 'descendente' ? (
+                          <FaMedal className={`text-sm ${getMedalColor(index + 1, user.victorias, orden)}`} />
+                        ) : (
+                          index === 0 && <FaMedal className="text-sm text-red-500" />
+                        )
+                      )}
+                    </div>
+                    {user.favorito && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {user.favorito}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Estadísticas móvil */}
+                <div className="grid grid-cols-5 gap-1 text-center text-xs mb-2">
+                  <div className="flex flex-col items-center p-1 bg-gray-200 dark:bg-navy-800 rounded">
+                    <span className="font-bold">{user.victorias}</span>
+                    <span className="text-[10px]">V</span>
+                  </div>
+                  <div className="flex flex-col items-center p-1 bg-gray-200 dark:bg-navy-800 rounded">
+                    <span className="font-bold">{user.empates}</span>
+                    <span className="text-[10px]">E</span>
+                  </div>
+                  <div className="flex flex-col items-center p-1 bg-gray-200 dark:bg-navy-800 rounded">
+                    <span className="font-bold">{user.derrotas}</span>
+                    <span className="text-[10px]">D</span>
+                  </div>
+                  <div className="flex flex-col items-center p-1 bg-gray-200 dark:bg-navy-800 rounded">
+                    <span className="font-bold">
+                      {typeof user.win_rate === 'number' ? user.win_rate.toFixed(0) : user.win_rate}%
+                    </span>
+                    <span className="text-[10px]">WR</span>
+                  </div>
+                  <div className="flex flex-col items-center p-1 bg-gray-200 dark:bg-navy-800 rounded">
+                    <span className="font-bold">
+                      {typeof user.ranking_score === 'number' ? user.ranking_score.toFixed(1) : user.ranking_score}
+                    </span>
+                    <span className="text-[10px]">PTS</span>
+                  </div>
+                </div>
+
+                {/* Botón móvil */}
+                <div className="flex justify-end">
+                  {user.id === currentUserId ? (
+                    <span className="px-2 py-1 text-xs cursor-not-allowed text-gray-500">Tú</span>
+                  ) : esAmigo(user.id) ? (
+                    <button
+                      onClick={() => handleQuitarAmigo(user.id)}
+                      disabled={loading[user.id]}
+                      className="px-2 py-1 text-xs font-medium rounded-lg bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                    >
+                      {loading[user.id] ? '...' : 'Quitar'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleAgregarAmigo(user.id, user.username)}
+                      disabled={loading[user.id]}
+                      className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-blue-100 dark:bg-navy-600 text-blue-600 dark:text-white hover:bg-blue-200 dark:hover:bg-navy-500 transition-colors"
+                    >
+                      {loading[user.id] ? '...' : (
+                        <>
+                          <span>Agregar</span>
+                          <IoPersonAdd className="text-xs" />
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Lista de jugadores - Versión desktop (hidden en móvil) */}
+          <div className="hidden sm:block divide-y divide-gray-200 dark:divide-navy-700">
+            {sortedRanking.map((user, index) => (
+              <div
+                key={user.id}
+                className={`grid grid-cols-12 gap-4 items-center p-4 hover:bg-gray-50 dark:hover:bg-navy-700 transition-colors ${
+                  user.username === currentUser ? 'bg-blue-100 dark:bg-navy-800' : ''
+                }`}
+              >
+                {/* Posición */}
                 <div className="col-span-1 font-bold text-center">
                   {index + 1}º
                 </div>
 
-                {/* Avatar y Nombre (3 columnas) */}
+                {/* Avatar y Nombre */}
                 <div className="col-span-3 flex items-center gap-3">
                   <div className="relative h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
                     <Image
@@ -205,7 +308,7 @@ export default function RankingClient({ rankingData, currentUser, currentUserId 
                   </div>
                 </div>
 
-                {/* Estadísticas (6 columnas - 1 para cada métrica) */}
+                {/* Estadísticas desktop */}
                 <div className="col-span-6 grid grid-cols-5 gap-2 text-center">
                   <div className="flex flex-col items-center">
                     <p className="text-xl font-bold text-navy-700 dark:text-white">
@@ -239,14 +342,11 @@ export default function RankingClient({ rankingData, currentUser, currentUserId 
                   </div>
                 </div>
 
-                {/* Botón (2 columnas) */}
+                {/* Botón desktop */}
                 <div className="col-span-2 flex justify-end">
                   {user.id === currentUserId ? (
                     <span className="px-4 py-2 cursor-not-allowed text-gray-500">Tú</span>
-                  )
-                  
-                  
-                  : esAmigo(user.id) ? (
+                  ) : esAmigo(user.id) ? (
                     <button
                       onClick={() => handleQuitarAmigo(user.id)}
                       disabled={loading[user.id]}
@@ -254,10 +354,7 @@ export default function RankingClient({ rankingData, currentUser, currentUserId 
                     >
                       {loading[user.id] ? 'Quitando...' : 'Quitar amigo'}
                     </button>
-                  ) 
-                  
-                  
-                  : (
+                  ) : (
                     <button
                       onClick={() => handleAgregarAmigo(user.id, user.username)}
                       disabled={loading[user.id]}
@@ -272,8 +369,6 @@ export default function RankingClient({ rankingData, currentUser, currentUserId 
                     </button>
                   )}
                 </div>
-
-
               </div>
             ))}
           </div>
